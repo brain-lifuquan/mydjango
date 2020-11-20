@@ -1,0 +1,146 @@
+{% extends 'appnpo/base1.html' %}
+
+{% block main1 %}
+    <div class="container-fluid">
+        <div class="row">
+            scene_map 导航栏
+            <a href="{% url 'npo:scene_list' workspace.workspace_name %}">
+                <i class="fa fa-reply"></i>
+                返回列表
+            </a>
+        </div>
+        <div class="row">
+            <div id="scene_map" style="width: 1500px; height: 800px;" class="m-auto"></div>
+        </div>
+    </div>
+{% endblock main1 %}
+
+{% block script1 %}
+    <script>
+        $(document).ready(function () {
+            let data = new FormData();
+            data.append('post_type', 'get_map_data');
+            myajax({
+                url: '',
+                data: data,
+                success: function (respon) {
+                    let region = JSON.parse(respon.data.region.replace(/'/g, '"'));
+                    let ends = [];
+                    for (let i = 0; i < region.ends.length; i++) {
+                        let end = region.ends[i];
+                        let po = wgs84_to_bd09(end);
+                        ends.push(new BMap.Point(po.lng, po.lat));
+                    }
+                    ends.push(ends[0]);
+                    let map = new BMap.Map("scene_map"); // 创建地图实例
+                    // 区域折线
+                    let polyline = new BMap.Polyline(ends, {
+                        strokeColor: "blue",
+                        strokeWeight: 2,
+                        strokeOpacity: 0.5
+                    });
+                    map.addOverlay(polyline);
+                    // 周边站址
+                    let sites = respon.data.sites_nearby;
+                    for (let i = 0; i < sites.length; i++) {
+                        let po = wgs84_to_bd09(sites[i]);
+                        let point = new BMap.Point(po.lng, po.lat);
+                        let marker = new BMap.Marker(point);
+                        map.addOverlay(marker);
+                    }
+
+                    // 周边小区
+                    let cells = respon.data.cells_nearby;
+                    for (let i = 0; i < cells.length; i++) {
+                        let po = wgs84_to_bd09(cells[i]);
+                        let point = new BMap.Point(po.lng, po.lat);
+                        if (cells[i].is_cover) {
+                            let sector = new SectorLayer({
+                                center: point,
+                                azimuth: cells[i].azimuth,
+                                color: 'red',
+                            });
+                            map.addOverlay(sector);
+                        } else {
+                            let sector = new SectorLayer({
+                                center: point,
+                                azimuth: cells[i].azimuth,
+                            });
+                            map.addOverlay(sector);
+                        }
+
+                    }
+
+                    let center = wgs84_to_bd09(respon.data.center);
+                    let point = new BMap.Point(center.lng, center.lat); // 创建点坐标
+                    let marker = new BMap.Marker(point);
+                    map.addOverlay(marker);
+                    let viewport = map.getViewport(ends, {zoomFactor: -1});
+                    let top_left_navigation = new BMap.NavigationControl();  //左上角，添加默认缩放平移控件
+                    map.addControl(top_left_navigation);
+                    map.centerAndZoom(viewport.center, viewport.zoom);
+                },
+            });
+        });
+
+        function SectorLayer(option) {
+            // 扇形圆心
+            this._center = option.center;
+            // 扇形中心角度
+            this._azimuth = option.azimuth;
+            // 扇形的夹角 默认60度
+            this._angle = option.angle ? option.angle : 60;
+            // 扇形半径 默认为100px
+            this._radius = option.radius ? option.radius : 100;
+            // 扇区颜色
+            this._color = option.color ? option.color : 'blue';
+            // 透明度 默认 50%
+            this._opacity = option.opacity ? option.opacity : 0.5;
+        }
+
+        // 继承百度地图覆盖物
+        SectorLayer.prototype = new BMap.Overlay();
+
+        // 初始化
+        SectorLayer.prototype.initialize = function (map) {
+            this._map = map;
+
+            let canvas = document.createElement("canvas"); // 创建Cavans对象
+            canvas.setAttribute("width", String(this._radius * 2));// 不能用canvas.style.width,会拉变形
+            canvas.setAttribute("height", String(this._radius * 2));
+            canvas.style.zIndex = BMap.Overlay.getZIndex(this._center.lat);
+            canvas.style.position = "absolute";
+            canvas.style.background = "translate";
+            canvas.style.opacity = this._opacity;
+
+            let ctx = canvas.getContext('2d');
+            ctx.lineWidth = 1;
+            ctx.fillStyle = this._color; //填充色彩
+            ctx.strokeStyle = "red";//设置边颜色
+            ctx.beginPath();
+            ctx.translate(this._radius, this._radius);
+            ctx.moveTo(0, 0);
+            // arc画圆的0度是从正右方计算的， 方向角0度是正上方，需要-90度偏转
+            this._startAngle = (this._azimuth - 1 / 2 * this._angle + 270) % 360;
+            this._endAngle = (this._azimuth + 1 / 2 * this._angle + 270) % 360;
+            ctx.arc(0, 0, this._radius, this._startAngle / 180 * Math.PI, this._endAngle / 180 * Math.PI);
+            ctx.fill();
+            ctx.closePath();
+
+            map.getPanes().markerPane.appendChild(canvas);
+            this._canvas = canvas;
+            return canvas;
+        };
+
+        SectorLayer.prototype.draw = function () {
+            let map = this._map;
+            let pixel = map.pointToOverlayPixel(this._center);
+            this._canvas.style.left = pixel.x - this._radius + "px";
+            this._canvas.style.top = pixel.y - this._radius + "px";
+        };
+    </script>
+{% endblock script1 %}
+
+{% block script_befor %}
+    {% include 'myinclude/basic/baidumap.html' %}
+{% endblock script_befor %}

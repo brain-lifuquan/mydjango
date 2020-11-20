@@ -1,0 +1,38 @@
+{% if class_type %}
+<span class="d-inline-block" data-toggle="tooltip" data-placement="top" title="清空">
+    <button type="button" class="btn btn-primary btn-sm" name="clear">
+        <i class="fa fa-eraser"></i>
+    </button>
+    <script>
+        $(document).ready(function () {
+            // 清空
+            $('button[name="clear"]').on('click', function () {
+                let content = '<p>点击确定将清空<strong><em>&nbsp;&nbsp;<u>{{ class_type }}</u>&nbsp;&nbsp;</em></strong>数据,请务必谨慎操作!!</p>';
+                show_dialog({
+                    title: '清空',
+                    content: content,
+                    confirm: function () {
+                        let data = new FormData();
+                        data.append('post_type', 'clear');
+                        $.ajax({
+                            url: '#',
+                            type: 'post',
+                            dataType: 'json',
+                            contentType: false,
+                            processData: false,
+                            data: data,
+                            success: function (respon) {
+                                if (respon.code > 0) {
+                                    show_errmsg(respon);
+                                } else {
+                                    $('#table').bootstrapTable('refresh');
+                                }
+                            },
+                        });
+                    },
+                });
+            });
+        });
+    </script>
+</span>
+{% endif %}

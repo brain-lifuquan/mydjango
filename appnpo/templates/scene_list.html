@@ -1,0 +1,84 @@
+{% extends 'appnpo/base1.html' %}
+
+{% block main1 %}
+    <div class="container-fluid">
+        <div class="row">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'npo:workspace_list' %}">
+                            项目列表
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'npo:workspace' workspace.workspace_name %}">
+                            项目--{{ workspace.workspace_name }}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        场景列表
+                    </li>
+                </ol>
+            </nav>
+        </div>
+        <table id="table" class="table table-sm table-bordered table-striped">
+            <thead class="thead-dark">
+            <tr>
+                <th data-checkbox="true"></th>
+                <th data-field="scene_id">场景编号</th>
+                <th data-field="scene_name">场景名称</th>
+                <th data-field="scene_type">场景类型</th>
+                <th data-field="center.lng">中心经度</th>
+                <th data-field="center.lat">中心纬度</th>
+                <th data-align="center" data-formatter="operate_formatter" data-events="window.row_toolbar_events">操作
+                </th>
+            </tr>
+            </thead>
+        </table>
+        <div class="row">
+            <div id="toolbar">
+                {# 将 一个url 保存成一个参数reply_url 此参数只在当前block生效  #}
+                {% url 'npo:workspace' workspace.workspace_name as reply_url %}
+                {# 将上面的参数传送给模板 only 表示模板只接受此处的参数，不从其他地方接受参数 #}
+                {% include 'myinclude/bootstrap_table/toolbar_buttons/reply.html' with reply_url=reply_url only %}
+                {% include 'myinclude/bootstrap_table/toolbar_buttons/new_object.html' %}
+                {% include 'myinclude/bootstrap_table/toolbar_buttons/delete_selected.html' %}
+                {% include 'myinclude/bootstrap_table/toolbar_buttons/download_template.html' %}
+                {% include 'myinclude/bootstrap_table/toolbar_buttons/upload.html' %}
+                {% include 'myinclude/bootstrap_table/toolbar_buttons/clear.html' %}
+            </div>
+            <div class="d-none" id="row_toolbar">
+                <div class="btn-group">
+                    <button  class="btn btn-primary btn-sm" type="button" name="enter"
+                            data-toggle="tooltip" data-placement="top" title="查看详情" >
+                        <i class="fa fa-book-open"></i>
+                    </button>
+                    {% include 'myinclude/bootstrap_table/row_toolbar_buttons/edit_object.html' %}
+                    {% include 'myinclude/bootstrap_table/row_toolbar_buttons/delete_object.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock main1 %}
+
+{% block script1 %}
+    <script>
+        $(document).ready(function () {
+            show_bootstrap_table();
+            if (window.row_toolbar_events === undefined) {
+                window.row_toolbar_events = [];
+            }
+            window.row_toolbar_events['click button[name="enter"]'] = function (e, value, row, index) {
+                //console.log("{% url 'npo:scene' workspace.workspace_name '{0}' %}".format(row.scene_name));
+                // window.location.href = "{% url 'npo:scene' workspace.workspace_name '{0}' %}".format(row.scene_name);
+                // 这里的url可能需要根据情况进行修改
+                console.log(row.scene_name);
+                window.location.href = '/npo/{{ workspace.workspace_name }}/{0}'.format(row.scene_name);
+            };
+        });
+    </script>
+{% endblock script1 %}
+
+{% block script_after %}
+    {% include 'myinclude/bootstrap_table/bootstrap_table.html' %}
+{% endblock script_after %}

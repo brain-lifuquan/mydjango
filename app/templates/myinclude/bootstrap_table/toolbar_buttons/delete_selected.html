@@ -1,0 +1,36 @@
+{% if class_type %}
+    <span class="d-inline-block" data-toggle="tooltip" data-placement="top" title="删除选中">
+        <button type="button" class="btn btn-primary btn-sm" name="delete_selected">
+            <i class="fa fa-trash"></i>
+        </button>
+        <script>
+            $(document).ready(function () {
+                // 删除选中
+                $('button[name="delete_selected"]').on('click', function () {
+                    let selected = $('#table').bootstrapTable('getSelections');
+                    if (selected.length === 0) {
+                        show_msg('请先选中要删除的数据');
+                    } else {
+                        let content = '确定要删除选中的<strong><em><u>{0}</u></em></strong>项<strong><em><u>{{ class_type }}</u></em></strong>数据'.format(selected.length);
+                        show_dialog({
+                            title: '删除',
+                            content: content,
+                            confirm: function () {
+                                let data = new FormData();
+                                data.append('post_type', 'delete_object');
+                                data.append('data', JSON.stringify(selected));
+                                myajax({
+                                    url: '',
+                                    data: data,
+                                    success: function (res) {
+                                        $('#table').bootstrapTable('refresh');
+                                    },
+                                });
+                            },
+                        });
+                    }
+                });
+            });
+        </script>
+    </span>
+{% endif %}

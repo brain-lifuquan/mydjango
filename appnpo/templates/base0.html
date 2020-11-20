@@ -1,0 +1,34 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    {% block script_befor %}
+    {% endblock script_befor %}
+    {% include 'myinclude/meta_icon.html' %}
+    {% include 'myinclude/bootstrap_only.html' %}
+    {% block script_after %}
+    {% endblock script_after %}
+    <script src="{% static 'myjs.js' %}"></script>
+    {% if title %}
+        <title>{{ title }}</title>
+    {% endif %}
+</head>
+<body>
+<header class="navbar navbar-light bg-light justify-content-between align-content-center" style="height: 60px;">
+    <a class="navbar-brand" href="javascript: void(0);">
+        <img src="{% static 'image/fjthcc/fjthcc_new.png' %}" alt="福建天海" height="60px"/>
+    </a>
+    <span class="text-center h2">网络优化智能辅助系统</span>
+    <ul class="navbar-nav flex-row pr-4">
+        <li class="nav-item">
+            <a class="nav-link" href="javascript: void(0);">欢迎</a>
+        </li>
+    </ul>
+</header>
+{% block main0 %}
+{% endblock main0 %}
+<div class="d-none">{% csrf_token %}</div>
+{% block script0 %}
+{% endblock script0 %}
+</body>
+</html>

@@ -1,0 +1,39 @@
+{% if class_type %}
+    <span class="d-inline-block" data-toggle="tooltip" data-placement="top" title="新增">
+        <button type="button" class="btn btn-primary btn-sm" name="new_object">
+            <i class="fa fa-plus"></i>
+        </button>
+        <script>
+            $(document).ready(function () {
+                // 新增按钮逻辑
+                $('button[name="new_object"]').on('click', function () {
+                    let data = new FormData();
+                    data.append('post_type', 'get_form');
+                    myajax({
+                        url: '',
+                        data: data,
+                        success: function (respon) {
+                            let post_type = 'new_object';
+                            show_dialog({
+                                title: '新增',
+                                content: '<form name="{0}" class="form-group">{1}</form>'.format(post_type, respon.form),
+                                confirm: function () {
+                                    let $form = $('form[name="{0}"]'.format(post_type))[0];
+                                    let data = new FormData($form);
+                                    data.append('post_type', post_type);
+                                    myajax({
+                                        url: '',
+                                        data: data,
+                                        success: function () {
+                                            $('#table').bootstrapTable('refresh');
+                                        },
+                                    });
+                                },
+                            });
+                        },
+                    });
+                });
+            });
+        </script>
+    </span>
+{% endif %}

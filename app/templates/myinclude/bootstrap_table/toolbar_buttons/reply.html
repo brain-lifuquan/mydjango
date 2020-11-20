@@ -1,0 +1,16 @@
+{# bootstrap-table toolbar中的 返回按钮 需要传送 reply_url 参数  未传参 不显示按钮 #}
+{% if reply_url %}
+    <span class="d-inline-block" data-toggle="tooltip" data-placement="top" title="返回">
+        <button type="button" class="btn btn-primary btn-sm" name="reply">
+            <i class="fa fa-reply"></i>
+        </button>
+        <script>
+            $(document).ready(function () {
+                // 返回
+                $('button[name="reply"]').on('click', function () {
+                    window.location.href = '{{ reply_url }}';
+                });
+            });
+        </script>
+    </span>
+{% endif %}

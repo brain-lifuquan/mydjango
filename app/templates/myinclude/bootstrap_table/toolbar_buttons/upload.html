@@ -1,0 +1,32 @@
+{% if class_type %}
+    <span class="d-inline-block" data-toggle="tooltip" data-placement="top" title="上传">
+        <button type="button" class="btn btn-primary btn-sm" name="upload">
+            <i class="fa fa-upload"></i>
+        </button>
+        <script>
+            $(document).ready(function () {
+                // 上传
+                $('button[name="upload"]').on('click', function () {
+                    let input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.csv';
+                    input.addEventListener('change', function () {
+                        let data = new FormData();
+                        data.append('post_type', 'upload');
+                        data.append('file', this.files[0]);
+                        myajax({
+                            url: '',
+                            data: data,
+                            success: function (res) {
+                                $('#table').bootstrapTable('refresh');
+                            },
+                        });
+                    });
+                    document.body.appendChild(input);
+                    input.click();
+                    document.body.removeChild(input);
+                });
+            });
+        </script>
+    </span>
+{% endif %}

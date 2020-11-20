@@ -1,0 +1,24 @@
+{% if class_type %}
+    <span class="d-inline-block" data-toggle="tooltip" data-placement="top" title="下载模板">
+        <button type="button" class="btn btn-primary btn-sm" name="download_template">
+            <i class="fa fa-download"></i>
+        </button>
+        <script>
+            $(document).ready(function () {
+                // 下载模板
+                $('button[name="download_template"]').on('click', function () {
+                    let data = new FormData();
+                    data.append('post_type', 'get_template');
+                    let csv_name = '{{ class_type }}_template.csv';
+                    myajax({
+                        url: '',
+                        data: data,
+                        success: function (respon) {
+                            to_csv([], csv_name, respon.fields);
+                        },
+                    });
+                });
+            });
+        </script>
+    </span>
+{% endif %}

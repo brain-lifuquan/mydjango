@@ -1,0 +1,17 @@
+{# 需要引入 bootstrap相关的css和 js文件 #}
+{% for field in form %}
+    {# 显示错误 #}
+    {{ field.errors }}
+    {% if field.is_hidden %}
+        {# 对于hidden field 只做简单展示 #}
+        {{ field }}
+    {% else %}
+        {# 对非 hidden的 field 使用bootstrap input-group 显示 #}
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text">{{ field.label }}</span>
+            </div>
+            {{ field }}
+        </div>
+    {% endif %}
+{% endfor %}

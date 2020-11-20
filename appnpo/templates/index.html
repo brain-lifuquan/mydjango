@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    {# 通知谷歌浏览器 这是中文网页 #}
+    <meta http-equiv="Content-Language" content="zh-CN">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {# 页面简介 #}
+    <meta content="左侧边栏可以伸缩" name="description">
+    <meta content="lifuquan" name="author">
+    {# 页面标题栏的图标 #}
+    <link rel="shortcut icon" href="{% static 'image/fjthcc/fjthcc.ico' %}"/>
+    {# fontawsome #}
+    <link rel="stylesheet" href="{% static 'fontawesome-free-5.13.0-web/css/all.min.css' %}">
+    {# bootstrap #}
+    <link rel="stylesheet" href=" {% static 'bootstrap-4.5.0-dist/css/bootstrap.css' %}">
+    {% if title %}
+        <title>{{ title }}</title>
+    {% endif %}
+    <style>
+        header {
+            height: 60px;
+            overflow: hidden;
+            z-index: 100;
+        }
+    </style>
+    {% block style %}
+    {% endblock style %}
+</head>
+<body>
+<header class="navbar navbar-light bg-light justify-content-between align-content-center">
+    <a class="navbar-brand" href="javascript: void(0);">
+        <img src="{% static 'image/fjthcc/fjthcc_new.png' %}" alt="福建天海" height="60px"/>
+    </a>
+    <span class="text-center h2">网络优化智能辅助系统</span>
+    <ul class="navbar-nav">
+        <li class="nav-item">
+            <a class="nav-link" href="javascript: void(0);">欢迎</a>
+        </li>
+    </ul>
+</header>
+<div class="container mt-5">
+    <div class="jumbotron">
+        <h1 class="display-4">场景分析</h1>
+        <p class="lead">分析场景主覆盖站点、小区， 并在百度地图上图形化展示</p>
+        <hr class="my-4">
+        <p>开发中</p>
+        <a class="btn btn-primary btn-lg" href="{% url 'npo:workspace_list' %}" role="button">进入</a>
+    </div>
+</div>
+{% block script_after %}
+{% endblock script_after %}
+</body>
+</html>

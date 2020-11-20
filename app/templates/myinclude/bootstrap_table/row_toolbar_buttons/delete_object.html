@@ -1,0 +1,33 @@
+{# bootstrap-table 表格中行操作按钮中的删除按钮 需要传入一个参数 #}
+{% if class_type and name_field %}
+    <button type="button" class="btn btn-primary btn-sm" name="delete_object"
+            data-toggle="tooltip" data-placement="top" title="删除">
+        <i class="fa fa-trash"></i>
+    </button>
+    <script>
+        $(document).ready(function () {
+            if (window.row_toolbar_events === undefined) {
+                window.row_toolbar_events = [];
+            }
+            // 删除
+            window.row_toolbar_events['click button[name="delete_object"]'] = function (e, value, row, index) {
+                show_dialog({
+                    title: '<i class="fa fa-trash"></i>删除',
+                    content: '<p>确定要删除<strong><em>{{ class_type }}</em>--<u>{0}</u></strong></p>'.format(row.{{ name_field }}),
+                    confirm: function () {
+                        let data = new FormData();
+                        data.append('post_type', 'delete_object');
+                        data.append('data', JSON.stringify([row]));
+                        myajax({
+                            url: '',
+                            data: data,
+                            success: function (res) {
+                                $('#table').bootstrapTable('refresh');
+                            },
+                        });
+                    },
+                });
+            };
+        });
+    </script>
+{% endif %}

@@ -1,0 +1,258 @@
+{% extends 'appnpo/base1.html' %}
+
+{% block main1 %}
+    <div class="container-fluid">
+        <div class="row">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'npo:workspace_list' %}">
+                            项目列表
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        项目--{{ workspace.workspace_name }}
+                    </li>
+                </ol>
+            </nav>
+        </div>
+        <div class="row">
+            <div class="container-fluid">
+                <div class="card-deck">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">项目名称：{{ workspace.workspace_name }}</h5>
+                            <h4 class="card-subtitle mb-2 text-muted">最后更新时间：{{ workspace.time_lastmodify }}</h4>
+                            <h4 class="card-subtitle mb-2 text-muted">
+                                是否需要重新计算：
+                                {% if need_recheck %}
+                                    是
+                                {% else %}
+                                    否
+                                {% endif %}
+                            </h4>
+                            <div class="m-2">
+                                <button type="button" class="btn btn-primary btn-sm" name="check">重新计算</button>
+                            </div>
+                            <div class="m-2">
+                                <button type="button" class="btn btn-primary btn-sm" name="export">导出结果</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">场景</h5>
+                            <h3 class="card-subtitle mb-2 text-muted">{{ scenes_count }}</h3>
+                            <div id="scene_chart" style="width: 300px;height:200px;"></div>
+                            <a href="{% url 'npo:scene_list' workspace.workspace_name %}" class="card-link">详情</a>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">站址</h5>
+                            <h3 class="card-subtitle mb-2 text-muted">{{ sites_count }}</h3>
+                            <div id="site_chart" style="width: 300px; height: 200px"></div>
+                            <a href="{% url 'npo:site_list' workspace.workspace_name %}" class="card-link">详情</a>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">小区</h5>
+                            <h3 class="card-subtitle mb-2 text-muted">{{ cells_count }}</h3>
+                            <div id="cell_chart" style="width: 300px;height:200px;"></div>
+                            <a href="{% url 'npo:cell_list' workspace.workspace_name %}" class="card-link">详情</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row m-2"></div>
+        <div class="row">
+            <card class="card">
+                <div class="card-body">
+                    <h5 class="card-title">相邻站址情况</h5>
+                   <div id="site_nearby_chart" style="width: 1200px;height:300px;"></div>
+                </div>
+            </card>
+        </div>
+    </div>
+{% endblock main1 %}
+
+{% block script1 %}
+    <script>
+        $(document).ready(function () {
+            let data = new FormData();
+            data.append('post_type', 'get_data_for_charts');
+            myajax({
+                url: '',
+                data: data,
+                success: function (respon) {
+                    // scene_chart
+                    echarts.init(document.getElementById('scene_chart')).setOption({
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '{a} <br/>{b}: {c} ({d}%)'
+                        },
+                        grid: {
+                            // grid 定义图标在父元素中的位置
+                            top: 30,
+                            bottom: 30,
+                            left: 40,
+                        },
+                        xAxis: {
+                            type: 'value',
+                        },
+                        yAxis: {
+                            type: 'category',
+                            inverse: true,
+                        },
+                        series: [
+                            {
+                                type: 'bar',
+                                data: respon.data['scene_chart'],
+                                // 是否启用防止标签重叠策略，默认开启，在标签拥挤重叠的情况下会挪动各个标签的位置，防止标签间的重叠。
+                                avoidLabelOverlap: true,
+                                // 标签设置
+                                label: {
+                                    // 标签显示格式  b 是数据名 c代表数据值
+                                    formatter: '{b}:{c}',
+                                    show: true,
+                                    // 显示位置
+                                    position: 'right',
+                                },
+                                itemStyle: {
+                                    color: function (params) {
+                                        let colorList = [
+                                            "#c23531", "#2f4554", "#61a0a8", "#d48265", "#91c7ae", "#749f83", "#ca8622", "#bda29a",
+                                            "#6e7074", "#546570", "#c4ccd3", "#4BABDE", "#FFDE76", "#E43C59", "#37A2DA"
+                                        ];
+                                        return colorList[params.dataIndex];
+                                    }
+                                }
+                            }
+                        ]
+                    });
+                    // site_chart
+                    echarts.init(document.getElementById('site_chart')).setOption({
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '{a} <br/>{b}: {c} ({d}%)'
+                        },
+                        grid: {
+                            // grid 定义图标在父元素中的位置
+                            top: 30,
+                            bottom: 30,
+                            left: 40,
+                        },
+                        xAxis: {
+                            type: 'category',
+                        },
+                        yAxis: {
+                            type: 'value',
+
+                        },
+                        series: [
+                            {
+                                // type 代表图标类型 pie 为饼图
+                                type: 'bar',
+                                data: respon.data['site_chart'],
+                                // 是否启用防止标签重叠策略，默认开启，在标签拥挤重叠的情况下会挪动各个标签的位置，防止标签间的重叠。
+                                avoidLabelOverlap: true,
+                                // 标签设置
+                                label: {
+                                    // 标签显示格式  b 是数据名 c代表数据值
+                                    formatter: '{b}:{c}',
+                                    show: true,
+                                    // 显示位置
+                                    position: 'top',
+                                    // 标签旋转
+                                    rotate: 0,
+                                },
+                                itemStyle: {
+                                    color: function (params) {
+                                        let colorList = [
+                                            "#c23531", "#2f4554", "#61a0a8", "#d48265", "#91c7ae", "#749f83", "#ca8622", "#bda29a",
+                                            "#6e7074", "#546570", "#c4ccd3", "#4BABDE", "#FFDE76", "#E43C59", "#37A2DA"
+                                        ];
+                                        return colorList[params.dataIndex];
+                                    }
+                                }
+                            },
+                        ]
+                    });
+                    // cell_chart
+                    echarts.init(document.getElementById('cell_chart')).setOption({
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '{a} <br/>{b}: {c} ({d}%)'
+                        },
+                        series: [
+                            {
+                                // type 代表图标类型 pie 为饼图
+                                type: 'pie',
+                                // radius 饼图的半径 [内径,外径] 决定饼的大小， 内径大于0% 可以将饼设置为圆环
+                                radius: ['30%', '100%'],
+                                // 是否启用防止标签重叠策略，默认开启，在标签拥挤重叠的情况下会挪动各个标签的位置，防止标签间的重叠。
+                                avoidLabelOverlap: true,
+                                // 标签设置
+                                label: {
+                                    // 标签显示格式  b 是数据名 c代表数据值
+                                    formatter: '{b}:{c}',
+                                    show: true,
+                                    // 显示位置
+                                    position: 'inside',
+                                },
+                                data: respon.data['cell_chart'],
+                            }
+                        ]
+                    });
+                    // site_nearby_chart
+                    echarts.init(document.getElementById('site_nearby_chart')).setOption({
+                        xAxis: {
+                            type: 'category',
+                            // data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                            data: respon.data['site_nearby_chart'][0],
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        series: [{
+                            // data: [820, 932, 901, 934, 1290, 1330, 1320],
+                            data: respon.data['site_nearby_chart'][1],
+                            type: 'line'
+                        }]
+                    });
+                }
+            });
+
+            $('button[name="check"]').on('click', function () {
+                let data = new FormData();
+                data.append('post_type', 'check');
+                myajax({
+                    url: '',
+                    data: data,
+                    success: function () {
+                        console.log('success to send test_celery');
+                    },
+                });
+            });
+
+            $('button[name="export"]').on('click', function () {
+                let data = new FormData();
+                data.append('post_type', 'export');
+                myajax({
+                    url: '',
+                    data: data,
+                    success: function (respon) {
+                        console.log(respon.data);
+                        to_csv(respon.data, '结果.csv');
+                    },
+                });
+            });
+        });
+    </script>
+{% endblock script1 %}
+
+{% block script_after %}
+    {% include 'myinclude/basic/echarts.html' %}
+{% endblock script_after %}

@@ -1,0 +1,11 @@
+{
+    "python.pythonPath": "/bin/python3",
+    // flake8配置
+    "python.linting.flake8Enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Args": [
+        "--extend-ignore=E501,E402",
+    ],
+    // 代码格式化
+    "python.formatting.provider": "yapf",
+}

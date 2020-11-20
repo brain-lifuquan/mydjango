@@ -1,0 +1,71 @@
+{% extends 'appnpo/base1.html' %}
+
+{% block main1 %}
+    <div class="container-fluid">
+        <div class="row">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'npo:workspace_list' %}">
+                            项目列表
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'npo:workspace' workspace.workspace_name %}">
+                            项目--{{ workspace.workspace_name }}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        小区列表
+                    </li>
+                </ol>
+            </nav>
+        </div>
+        <table id="table" class="table table-sm table-bordered table-striped">
+            <thead class="thead-dark">
+            <tr>
+                <th data-checkbox="true"></th>
+                <th data-field="cell_id">小区号</th>
+                <th data-field="cell_name">小区名</th>
+                <th data-field="cell_type">类型</th>
+                <th data-field="azimuth">方向角</th>
+                <th data-field="lng">经度</th>
+                <th data-field="lat">纬度</th>
+                <th data-align="center" data-formatter="operate_formatter" data-events="window.row_toolbar_events">操作
+                </th>
+            </tr>
+            </thead>
+        </table>
+        <div class="row">
+            <div id="toolbar">
+                {# 将 一个url 保存成一个参数reply_url 此参数只在当前block生效  #}
+                {% url 'npo:workspace' workspace.workspace_name as reply_url %}
+                {# 将上面的参数传送给模板 only 表示模板只接受此处的参数，不从其他地方接受参数 #}
+                {% include 'myinclude/bootstrap_table/toolbar_buttons/reply.html' with reply_url=reply_url only %}
+                {% include 'myinclude/bootstrap_table/toolbar_buttons/new_object.html' %}
+                {% include 'myinclude/bootstrap_table/toolbar_buttons/delete_selected.html' %}
+                {% include 'myinclude/bootstrap_table/toolbar_buttons/download_template.html' %}
+                {% include 'myinclude/bootstrap_table/toolbar_buttons/upload.html' %}
+                {% include 'myinclude/bootstrap_table/toolbar_buttons/clear.html' %}
+            </div>
+            <div class="d-none" id="row_toolbar">
+                <div class="btn-group">
+                    {% include 'myinclude/bootstrap_table/row_toolbar_buttons/edit_object.html' %}
+                    {% include 'myinclude/bootstrap_table/row_toolbar_buttons/delete_object.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock main1 %}
+
+{% block script1 %}
+    <script>
+        $(document).ready(function () {
+            show_bootstrap_table();
+        });
+    </script>
+{% endblock script1 %}
+
+{% block script_after %}
+    {% include 'myinclude/bootstrap_table/bootstrap_table.html' %}
+{% endblock script_after %}

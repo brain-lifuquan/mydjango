@@ -1,0 +1,43 @@
+{% if class_type %}
+    <button type="button" class="btn btn-primary btn-sm" name="edit_object"
+            data-toggle="tooltip" data-placement="top" title="编辑">
+        <i class="fa fa-edit"></i>
+    </button>
+    <script>
+        $(document).ready(function () {
+            if (window.row_toolbar_events === undefined) {
+                window.row_toolbar_events = [];
+            }
+            // 编辑
+            window.row_toolbar_events['click button[name="edit_object"]'] = function (e, value, row, index) {
+                let data = new FormData();
+                data.append('post_type', 'get_form');
+                data.append('data', JSON.stringify(row));
+                myajax({
+                    url: '',
+                    data: data,
+                    success: function (respon) {
+                        let post_type = 'edit_object';
+                        show_dialog({
+                            title: '编辑',
+                            content: '<form name="{0}">{1}</form>'.format(post_type, respon.form),
+                            confirm: function () {
+                                let $form = $('form[name="{0}"]'.format(post_type))[0];
+                                let data = new FormData($form);
+                                data.append('post_type', post_type);
+                                data.append('data', JSON.stringify(row));
+                                myajax({
+                                    url: '',
+                                    data: data,
+                                    success: function (respon) {
+                                        $('#table').bootstrapTable('refresh');
+                                    },
+                                });
+                            },
+                        });
+                    },
+                });
+            };
+        });
+    </script>
+{% endif %}

@@ -1,0 +1,133 @@
+{% extends 'appnpo/base0.html' %}
+
+{% block main0 %}
+    <main class="container">
+        <div class="row p-2">
+            项目列表
+        </div>
+        <div class="row p-2">
+            <button type="button" class="btn btn-primary" name="new_object">
+                <i class="fa fa-plus"></i>
+                新增
+            </button>
+        </div>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3">
+            {% for workspace in workspaces %}
+                <div class="col mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between">
+                                {{ workspace.workspace_type }}
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-secondary" name="edit_object">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" name="delete_object">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ workspace.workspace_name }}</h5>
+                            <p class="card-text">创建时间：{{ workspace.time_create }}</p>
+                            <p class="card-text">最后修改时间：{{ workspace.time_lastmodify }}</p>
+                            <a href="{% url 'npo:workspace' workspace.workspace_name %}"
+                               class="btn btn-primary">进入详情页</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </main>
+{% endblock main0 %}
+
+{% block script0 %}
+    <script>
+        $(document).ready(function () {
+            // 新增按钮逻辑
+            $('button[name="new_object"]').on('click', function () {
+                let data = new FormData();
+                data.append('post_type', 'get_form');
+                myajax({
+                    url: '',
+                    data: data,
+                    success: function (respon) {
+                        let post_type = 'new_object';
+                        let title = '新增';
+                        let content = '<form name="{0}" class="form-group">{1}</form>'.format(post_type, respon.form);
+                        show_dialog({
+                            title: title,
+                            content: content,
+                            confirm: function () {
+                                let $form = $('form[name="{0}"]'.format(post_type))[0];
+                                let data = new FormData($form);
+                                data.append('post_type', post_type);
+                                myajax({
+                                    url: '',
+                                    data: data,
+                                    success: function (respon) {
+                                        window.location = '';
+                                    },
+                                });
+                            },
+                        });
+                    },
+
+                });
+            });
+
+            // 删除按钮
+            $('button[name="delete_object"]').on('click', function () {
+                let workspace_name = $(this).parents('div.card').find('.card-title').html();
+                show_dialog({
+                    title: '<i class="fa fa-trash"></i>删除',
+                    content: '确定要删除工作空间--{0}?'.format(workspace_name),
+                    confirm: function () {
+                        let data = new FormData();
+                        data.append('post_type', 'delete_object');
+                        data.append('workspace_name', workspace_name);
+                        myajax({
+                            url: '',
+                            data: data,
+                            success: function (respon) {
+                                window.location.href = '';
+                            },
+                        });
+                    },
+                });
+            });
+            // 编辑按钮
+            $('button[name="edit_object"]').on('click', function () {
+                let workspace_name = $(this).parents('div.card').find('.card-title').html();
+                let data = new FormData();
+                data.append('post_type', 'get_form');
+                data.append('workspace_name', workspace_name);
+                myajax({
+                    url: '',
+                    data: data,
+                    success: function (res) {
+                        let post_type = 'edit_object';
+                        show_dialog({
+                            title: '编辑',
+                            content: '<form name="{0}">{1}</form>'.format(post_type, res.form),
+                            confirm: function () {
+                                let $form = $('form[name="{0}"]'.format(post_type))[0];
+                                let data = new FormData($form);
+                                data.append('post_type', post_type);
+                                data.append('old_workspace_name', workspace_name);
+                                myajax({
+                                    url: '',
+                                    data: data,
+                                    success: function (respon) {
+                                        window.location.href = '';
+                                    },
+                                });
+                            },
+                        });
+                    },
+                });
+            });
+        });
+    </script>
+{% endblock script0 %}

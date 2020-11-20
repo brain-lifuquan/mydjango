@@ -1,0 +1,82 @@
+{% extends 'appnpo/base0.html' %}
+
+{% block main0 %}
+    <aside class="bg-light" style="width: 200px; position: absolute">
+        <a name="left_open" href="javascript: void(0);" class="nav-link text-nowrap p-0 d-flex justify-content-end">
+        <span class="fa fa-angle-left fa-fw fa-2x" data-toggle="tooltip" data-placement="right"
+              title="合起侧边栏"></span>
+        </a>
+        <ul class="navbar-nav flex-column pl-3">
+            <li class="nav-item text-nowrap overflow-hidden">
+                <a class="nav-link" href="{% url 'npo:workspace' workspace.workspace_name %}">
+                    <span style="font-size: 1.3rem">
+                        <i class="fa fa-fw fa-home ml-2 mr-3"></i>
+                        主页
+                    </span>
+                </a>
+            </li>
+            <li class="nav-item text-nowrap overflow-hidden">
+                <a class="nav-link" href="{% url 'npo:scene_list' workspace.workspace_name %}">
+                    <span style="font-size: 1.3rem">
+                        <i class="fa fa-fw fa-building ml-2 mr-3"></i>
+                        场景列表
+                    </span>
+                </a>
+            </li>
+            <li class="nav-item text-nowrap overflow-hidden">
+                <a class="nav-link" href="{% url 'npo:site_list' workspace.workspace_name %}">
+                    <span style="font-size: 1.3rem">
+                        <i class="fa fa-fw fa-broadcast-tower ml-2 mr-3"></i>
+                        站址列表
+                    </span>
+                </a>
+            </li>
+            <li class="nav-item text-nowrap overflow-hidden">
+                <a class="nav-link" href="{% url 'npo:cell_list' workspace.workspace_name %}">
+                    <span style="font-size: 1.3rem">
+                        <i class="fa fa-fw fa-rss ml-2 mr-3"></i>
+                        小区列表
+                    </span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+    <main style="position: absolute; left: 200px; right: 0; width: auto">
+        {% block main1 %}
+        {% endblock main1 %}
+    </main>
+{% endblock main0 %}
+
+{% block script0 %}
+    <script>
+        $(document).ready(function () {
+            $("a[name='left_open']").on('click', function (event) {
+                if ($('aside').css('width') === '200px') {
+                    // 当前在展开状态
+                    // 关闭侧边栏
+                    $('aside').animate({'width': '66px'}, 100);
+                    // 同时移动内容
+                    $('main').animate({'left': '66px',}, 100);
+                    // 修改按键图标指向为向右
+                    $(this).children("span").removeClass("fa-angle-left");
+                    $(this).children("span").addClass("fa-angle-right");
+                    // 修改tooltag 提示信息
+                    $(this).children("span").attr('title', '展开侧边栏');
+                } else {
+                    // 当前在关闭状态
+                    // 打开侧边栏
+                    $('aside').animate({'width': '200px'}, 100);
+                    // 同时移动内容
+                    $('main').animate({'left': '200px',}, 100);
+                    // 修改按键图标指向为向左
+                    $(this).children("span").removeClass("fa-angle-right");
+                    $(this).children("span").addClass("fa-angle-left");
+                    // 修改tooltag 提示信息
+                    $(this).children("span").attr('title', '合起侧边栏');
+                }
+            });
+        });
+    </script>
+    {% block script1 %}
+    {% endblock script1 %}
+{% endblock script0 %}
