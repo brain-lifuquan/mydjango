@@ -81,14 +81,14 @@
                             {% if program|get_item:"index" == -1 %}
                                 <td>否</td>
                                 <td>
-                                    <a class="btn btn-link" href="{% url 'appipark1:program_view' program|get_item:"name" %}">预览</a>
+                                    <a class="btn btn-link" href="{% url 'ipark:program_view' program|get_item:"name" %}">预览</a>
                                     <button class="btn btn-link" name="delete_program_from_equipment" obj_name="{{ program|get_item:"name" }}">从设备上移除</button>
                                     <button class="btn btn-link" name="add_program_to_play_list" obj_name="{{ program|get_item:"name" }}">添加到播放列表</button>
                                 </td>
                             {% else %}
                                 <td>是</td>
                                 <td>
-                                    <a class="btn btn-link" href="{% url 'appipark1:program_view' program|get_item:"name" %}">预览</a>
+                                    <a class="btn btn-link" href="{% url 'ipark:program_view' program|get_item:"name" %}">预览</a>
                                     <button class="btn btn-link" name="delete_program_from_equipment" obj_name="{{ program|get_item:"name" }}">从设备上移除</button>
                                     <button class="btn btn-link" name="delete_program_from_play_list" obj_name="{{ program|get_item:"name" }}">移出播放列表</button>
                                 </td>
@@ -109,7 +109,7 @@
 // 推送
 $(document).on('click', 'button[name="send_program_to_equipment"]', function () {
     let post_data = get_formdata('query_programs');
-    myajax('{% url "appipark1:query" %}', post_data, function (respon) {
+    myajax('{% url "ipark:query" %}', post_data, function (respon) {
         if (respon.programs.length === 0) {
             layer.msg('没有可供推送的节目');
         } else {

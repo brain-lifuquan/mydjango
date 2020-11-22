@@ -27,7 +27,7 @@
                         <td>{{ program.duration }}</td>
                         <td>{{ program.storage }}</td>
                         <td>
-                            <a class="btn btn-link" href="{% url 'appipark1:program_view' program.name %}">预览</a>
+                            <a class="btn btn-link" href="{% url 'ipark:program_view' program.name %}">预览</a>
                             <button class="btn btn-link" name="edit_program" objname="{{ program.name }}">编辑</button>
                             <button class="btn btn-link" name="delete_program" objname="{{ program.name }}">删除</button>
                         </td>
@@ -45,14 +45,14 @@
 $(document).on('click', 'button[name="add_scale_type"]', function () {
     // 从服务器获取form信息
     let post_data = get_formdata('get_form_info');
-    myajax('{% url "appipark1:scale_type" %}', post_data, function (respon) {
+    myajax('{% url "ipark:scale_type" %}', post_data, function (respon) {
         // 弹窗显示新增分辨率表单
         let title = '新增节目分辨率';
         let post_type = 'add_scale_type';
         let content = get_form_content(post_type, respon.form);
         show_modal(title, content, function () {
             let post_data = get_formdata(post_type);
-            myajax('{% url "appipark1:scale_type" %}', post_data, function () {
+            myajax('{% url "ipark:scale_type" %}', post_data, function () {
                 window.location.href = '';
             });
         });
@@ -63,7 +63,7 @@ $(document).on('click', 'button[name="add_scale_type"]', function () {
 $(document).on('click', 'button[name="new_program"]', function () {
     // 获取节目的form
     let post_data = get_formdata('get_form_info');
-    myajax('{% url "appipark1:program_new" 'a' 1 %}', post_data, function (respon) {
+    myajax('{% url "ipark:program_new" 'a' 1 %}', post_data, function (respon) {
         // 新增节目弹窗
         let title = '新增节目';
         let type = 'add_program';

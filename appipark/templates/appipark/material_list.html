@@ -8,9 +8,9 @@
             <div class="list-group">
                 {% for mtype in material_types %}
                     {% if mtype.name == material_type %}
-                        <a class="list-group-item list-group-item-action active" href="{% url 'appipark1:material_list' mtype.name %}">{{ mtype.name_zh }}</a>
+                        <a class="list-group-item list-group-item-action active" href="{% url 'ipark:material_list' mtype.name %}">{{ mtype.name_zh }}</a>
                     {% else %}
-                        <a class="list-group-item list-group-item-action" href="{% url 'appipark1:material_list' mtype.name %}">{{ mtype.name_zh }}</a>
+                        <a class="list-group-item list-group-item-action" href="{% url 'ipark:material_list' mtype.name %}">{{ mtype.name_zh }}</a>
                     {% endif %}
                 {% endfor %}
             </div>

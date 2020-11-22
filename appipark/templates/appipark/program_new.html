@@ -382,7 +382,7 @@ $(document).on('change', 'input[name="material_duration"]', function () {
 $(document).on('click', 'button[name="set_bg_image"]', function () {
     let post_data = get_formdata('query_materials');
     post_data.append('material_type', 'bg_image');
-    myajax('{% url "appipark1:query" %}', post_data, function (respon) {
+    myajax('{% url "ipark:query" %}', post_data, function (respon) {
         // 弹出选择图片窗口
         let title = '选择背景素材';
         let content = get_materials_as_ul_html(respon.materials);
@@ -418,7 +418,7 @@ function refresh_bg_image_display() {
 $(document).on('click', 'button[name="add_material"]', function () {
     let post_data = get_formdata('query_materials');
     post_data.append('material_type', 'image&&video');
-    myajax('{% url "appipark1:query" %}', post_data, function (respon) {
+    myajax('{% url "ipark:query" %}', post_data, function (respon) {
         let title = '选择素材';
         let content = get_materials_as_ul_html(respon.materials, true);
         let index_modal = show_modal(title, content, function () {
@@ -505,7 +505,7 @@ $(document).on('click', 'button[name="save_program"]', function () {
     let post_data = get_formdata('save_program');
     post_data.append('program', JSON.stringify(window.program));
     myajax('', post_data, function (respon) {
-        window.location.href = '{% url "appipark1:program_list" %}';
+        window.location.href = '{% url "ipark:program_list" %}';
     });
 });
 
