@@ -1,0 +1,187 @@
+{% extends 'appipark/base.html' %}
+
+{% block page_body %}
+<div class="container-fluid m-3">
+    <div class="row">
+        <div class="col-2">
+            {# 素材类型列表 点击可以切换显示不同类型的素材 #}
+            <div class="list-group">
+                {% for mtype in material_types %}
+                    {% if mtype.name == material_type %}
+                        <a class="list-group-item list-group-item-action active" href="{% url 'appipark1:material_list' mtype.name %}">{{ mtype.name_zh }}</a>
+                    {% else %}
+                        <a class="list-group-item list-group-item-action" href="{% url 'appipark1:material_list' mtype.name %}">{{ mtype.name_zh }}</a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-10">
+            <div class="container-fluid">
+                <div class="row">
+                    <button class="btn btn-primary" name="upload_files">上传</button>
+                    {# file_selector_accept 限制输入文件类型 #}
+                    <input type="file" class="d-none" name="file_selector" accept="{{ file_selector_accept }}" multiple="multiple">
+                </div>
+                <div class="row mt-2">
+                    {% for material in materials %}
+                        {# bootstrap card #}
+                        <div class="card" style="width: 250px; display: inline-block;" name="file">
+                            <div class="card-header text-nowrap overflow-hidden" style="position: relative; height: 40px;">
+                                <a href="{{ material.file.url }}">{{ material.name }}</a>
+                                <button class="btn btn-link p-0 delete_file" style="position: absolute; right: 0; top: 0; display: none;" name="delete_server_file" objname="{{ material.name }}">
+                                    <svg class="bi bi-x text-danger" width="2em" height="2em" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M5.646 5.646a.5.5 0 000 .708l8 8a.5.5 0 00.708-.708l-8-8a.5.5 0 00-.708 0z" clip-rule="evenodd"/>
+                                        <path fill-rule="evenodd" d="M14.354 5.646a.5.5 0 010 .708l-8 8a.5.5 0 01-.708-.708l8-8a.5.5 0 01.708 0z" clip-rule="evenodd"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="card-body p-0" style="position: relative; height: 160px;">
+                                <img style="max-width: 100%; max-height: 100%; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);" src="{{ material.thumbnail.url }}" alt="图片跑丢了">
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_script %}
+<script>
+$(document).ready(function () {
+    // 全局变量 保存
+    window.material_type = '{{ material_type }}';
+    window.upload_files = [];
+});
+
+// 点击上传按钮
+$(document).on('click', 'button[name="upload_files"]', function () {
+    // 清空文件列表
+    window.upload_files = [];
+    // 上传文件弹窗
+    let title = '上传文件';
+    let content = '<div name="upload_file_list" class="ml-3"></div>';
+    layer.open({
+        type: 1,
+        closeBtn: 0,
+        offset: 'r',
+        area: ['60%', '100%'],
+        shade: 0.5,
+        btn: ['添加文件', '上传', '返回'],
+        title: title,
+        content: content,
+        yes: function () {
+            // 点击添加文件
+            $('input[name="file_selector"]').click();
+        },
+        btn2: function () {
+            let post_data = get_formdata('upload_files');
+            for (file of window.upload_files) {
+                post_data.append('files', file);
+            }
+            myajax('', post_data, function () {
+                window.location.href="";
+            });
+        },
+    });
+});
+
+// 选择文件
+$(document).on('change', 'input[name="file_selector"]', function () {
+    // 将选中的文件添加到全局变量中
+    for (file of this.files) {
+        window.upload_files.push(file);
+    }
+    refresh_upload_file_list();
+});
+
+// 鼠标进入文件卡片时显示删除按钮
+$(document).on('mouseenter', 'div[name="file"]', function () {
+    $(this).find('button.delete_file').show();
+});
+// 鼠标离开文件卡片时隐藏删除按钮
+$(document).on('mouseleave', 'div[name="file"]', function () {
+    $(this).find('button.delete_file').hide();
+});
+
+// 上传弹窗删除文件
+$(document).on('click', 'button[name="delete_upload_file"]', function () {
+    // 点击上传文件弹窗上的删除按钮
+    // Array.splice(index_to_delete, num_to_delete) 从数组中删除指定数量的函数
+    let index_to_delete = $(this).attr('listid');
+    window.upload_files.splice(index_to_delete, 1);
+    refresh_upload_file_list();
+});
+
+// 删除服务器文件--从列表页面删除文件
+$(document).on('click', 'button[name="delete_server_file"]', function () {
+    let material_name = $(this).attr('objname');
+    layer.confirm('确定要删除{0}?'.format(material_name), function () {
+        let post_data = get_formdata('delete_material');
+        post_data.append('name_to_delete', material_name);
+        myajax('', post_data, function () {
+            window.location.href = "";
+        });
+    });
+});
+
+// 刷新弹窗文件列表
+function refresh_upload_file_list() {
+    let $file_list = $('div[name="upload_file_list"]');
+    if (window.upload_files.length === 0) {
+        $file_list.html('');
+    } else {
+        let file_divs = [];
+        for (let i in window.upload_files) {
+            let file = window.upload_files[i];
+            let url = getObjectURL(file);
+            let fmt = get_file_div_format();
+            let file_div = fmt.format(url, i, file.name);
+            file_divs.push(file_div);
+        }
+        $file_list.html(file_divs.join(''));
+    }
+}
+
+function get_file_div_format() {
+    // 对于不同类型的素材，需要使用不同的方式进行显示
+    let fmt = '' +
+        '<div class="card" style="width: 250px; display: inline-block;" name="file">' +
+        '   <div class="card-header text-nowrap overflow-hidden" style="position: relative; height: 40px;">' +
+        '       {2}' +
+        '       <button class="btn btn-link p-0 delete_file" style="position: absolute; right: 0; top: 0; display: none;" name="delete_upload_file"  listid="{1}">' +
+        '           <svg class="bi bi-x text-danger" width="2em" height="2em" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">' +
+        '               <path fill-rule="evenodd" d="M5.646 5.646a.5.5 0 000 .708l8 8a.5.5 0 00.708-.708l-8-8a.5.5 0 00-.708 0z" clip-rule="evenodd"/>' +
+        '               <path fill-rule="evenodd" d="M14.354 5.646a.5.5 0 010 .708l-8 8a.5.5 0 01-.708-.708l8-8a.5.5 0 01.708 0z" clip-rule="evenodd"/>' +
+        '           </svg>' +
+        '       </button>' +
+        '   </div>' +
+        '   <div class="card-body p-0" style="position: relative; height: 160px;">';
+    if (window.material_type === 'video') {
+        // 视频类型
+        fmt += '<video style="max-width: 100%; max-height: 100%; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);" src="{0}" controls="controls">您的浏览器不支持 video 标签。</video>';
+    } else if (window.material_type === 'image' || window.material_type === 'bg_image') {
+        // 图片类型和背景图片类型
+        fmt += '<img style="max-width: 100%; max-height: 100%; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);" src="{0}" alt="图片跑丢了">';
+    } else {
+        alert('未定义的素材类型');
+    }
+    fmt += '</div></div>';
+    return fmt
+}
+
+function getObjectURL(file) {
+    let url = null ;
+    if (window.createObjectURL!==undefined) { // basic
+        url = window.createObjectURL(file) ;
+    } else if (window.URL!==undefined) { // mozilla(firefox)
+        url = window.URL.createObjectURL(file) ;
+    } else if (window.webkitURL!==undefined) { // webkit or chrome
+        url = window.webkitURL.createObjectURL(file) ;
+    }
+    return url ;
+}
+
+</script>
+{% endblock %}

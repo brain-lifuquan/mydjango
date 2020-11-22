@@ -1,0 +1,98 @@
+{% extends 'appipark/base.html' %}
+
+{% block page_body %}
+<div class="container-fluid">
+    <div class="row col-11 mt-3">
+        {# 新增节目 #}
+        <button type="button" class="btn btn-primary" name="new_program">新增节目</button>
+        {# 新增分辨率 #}
+        <button type="button" class="btn btn-primary" name="add_scale_type">新增分辨率</button>
+    </div>
+    <div class="row col-11 mt-3">
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">节目名称</th>
+                    <th scope="col">分辨率</th>
+                    <th scope="col">播放时长</th>
+                    <th scope="col">文件大小(M)</th>
+                    <th scope="col">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for program in programs%}
+                    <tr>
+                        <td>{{ program.name }}</td>
+                        <td>{{ program.scale_type.name }}</td>
+                        <td>{{ program.duration }}</td>
+                        <td>{{ program.storage }}</td>
+                        <td>
+                            <a class="btn btn-link" href="{% url 'appipark1:program_view' program.name %}">预览</a>
+                            <button class="btn btn-link" name="edit_program" objname="{{ program.name }}">编辑</button>
+                            <button class="btn btn-link" name="delete_program" objname="{{ program.name }}">删除</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_script %}
+<script>
+// 新增分辨率
+$(document).on('click', 'button[name="add_scale_type"]', function () {
+    // 从服务器获取form信息
+    let post_data = get_formdata('get_form_info');
+    myajax('{% url "appipark1:scale_type" %}', post_data, function (respon) {
+        // 弹窗显示新增分辨率表单
+        let title = '新增节目分辨率';
+        let post_type = 'add_scale_type';
+        let content = get_form_content(post_type, respon.form);
+        show_modal(title, content, function () {
+            let post_data = get_formdata(post_type);
+            myajax('{% url "appipark1:scale_type" %}', post_data, function () {
+                window.location.href = '';
+            });
+        });
+    });
+});
+
+// 新增节目
+$(document).on('click', 'button[name="new_program"]', function () {
+    // 获取节目的form
+    let post_data = get_formdata('get_form_info');
+    myajax('{% url "appipark1:program_new" 'a' 1 %}', post_data, function (respon) {
+        // 新增节目弹窗
+        let title = '新增节目';
+        let type = 'add_program';
+        let content = get_form_content(type, respon.form);
+        show_modal(title, content, function () {
+            let data = get_formdata(type);
+            let name = data.get('name');
+            let scale_type = data.get('scale_type');
+            window.location.href = "/ipark1/program/new/{0}/{1}/".format(name, scale_type);
+        });
+    });
+});
+
+// 删除节目
+$(document).on('click', 'button[name="delete_program"]', function () {
+    let program_name = $(this).attr('objname');
+    layer.confirm('确定要删除{0}?'.format(program_name), function () {
+        let post_data = get_formdata('delete_program');
+        post_data.append('program_name', program_name);
+        myajax('', post_data, function (respon) {
+            window.location.href = '';
+        });
+    });
+});
+
+// 编辑节目
+$(document).on('click', 'button[name="edit_program"]', function () {
+    let program_name = $(this).attr('objname');
+    window.location.href = '/ipark1/program/edit/{0}'.format(program_name);
+});
+</script>
+{% endblock %}

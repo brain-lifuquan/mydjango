@@ -1,0 +1,94 @@
+{% extends 'appipark/base.html' %}
+
+{% block page_body %}
+<div class="container-fluid col-11">
+    <div class="row mt-3">
+        <button type="button" class="btn btn-primary" name="add_equipment">新增大屏设备</button>
+    </div>
+    <div class="row mt-3">
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">设备ID</th>
+                    <th scope="col">可用存储/存储总量</th>
+                    <th scope="col">安装位置</th>
+                    <th scope="col">设备状态</th>
+                    <th scope="col">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for equipment in equipments %}
+                    <tr>
+                        <td>{{ equipment.name }}</td>
+                        <td>{{ equipment.storage_free }}M/{{ equipment.storage_all }}M</td>
+                        <td>{{ equipment.location }}</td>
+                        <td>{{ equipment.status }}</td>
+                        <td>
+                            <button class="btn btn-link" name="edit_equipment" objname="{{ equipment.name }}">编辑</button>
+                            <button class="btn btn-link" name="delete_equipment" objname="{{ equipment.name }}">删除</button>
+                            <button class="btn btn-link" name="get_program_list" objname="{{ equipment.name }}">查看详情</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_script %}
+<script>
+// 增加设备
+$(document).on('click', 'button[name="add_equipment"]', function () {
+    let post_data = get_formdata('get_form_info');
+    myajax('', post_data, function (respon) {
+        let title = '新增大屏设备';
+        let type = 'add_equipment';
+        let content = get_form_content(type, respon.form);
+        show_modal(title, content, function () {
+            let post_data = get_formdata(type);
+            myajax('', post_data, function () {
+                window.location.href = '';
+            });
+        });
+    });
+});
+
+// 编辑设备
+$(document).on('click', 'button[name="edit_equipment"]', function () {
+    let equipment_name = $(this).attr('objname');
+    let post_data = get_formdata('get_form_info');
+    post_data.append('equipment_name', equipment_name);
+    myajax('', post_data, function (respon) {
+        let title = '编辑大屏设备';
+        let type = 'edit_equipment';
+        let content = get_form_content(type, respon.form);
+        show_modal(title, content, function () {
+            let post_data = get_formdata(type);
+            post_data.append('equipment_name', equipment_name);
+            myajax('', post_data, function () {
+                window.location.href = '';
+            });
+        });
+    });
+});
+
+// 删除设备
+$(document).on('click', 'button[name="delete_equipment"]', function () {
+    let equipment_name = $(this).attr('objname');
+    layer.confirm('确定要删除{0}?'.format(equipment_name), function () {
+        let post_data = get_formdata('delete_equipment');
+        post_data.append('equipment_name', program_name);
+        myajax('', post_data, function (respon) {
+            window.location.href = '';
+        });
+    });
+});
+
+// 查看详情
+$(document).on('click', 'button[name="get_program_list"]', function () {
+    let equipment_name = $(this).attr('objname');
+    window.location.href = '/ipark1/equipment/programs/{0}/'.format(equipment_name);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends 'appipark/base.html' %}
+{% load get_dict_item %}
+
+{% block page_body %}
+<div class="container-fluid col-11 mt-3">
+    <div class="row">
+        <div class="input-group col-6 mt-2 pl-0">
+            <div class="input-group-prepend">
+                <span class="input-group-text">设备ID</span>
+            </div>
+            <input type="text" class="form-control" readonly value="{{ equipment.name }}" name="equipment_name">
+        </div>
+        <div class="input-group col-6 mt-2 pl-0">
+            <div class="input-group-prepend">
+                <span class="input-group-text">存储空间</span>
+            </div>
+            <input type="text" class="form-control" readonly value="总计{{ equipment.storage_all }}M/可用{{ equipment.storage_free }}M">
+        </div>
+        <div class="input-group col-6 mt-2 pl-0">
+            <div class="input-group-prepend">
+                <span class="input-group-text">设备安装位置</span>
+            </div>
+            <input type="text" class="form-control" readonly value="{{ equipment.location }}">
+        </div>
+        <div class="input-group col-6 mt-2 pl-0">
+            <div class="input-group-prepend">
+                <span class="input-group-text">设备状态</span>
+            </div>
+            <input type="text" class="form-control" readonly value="{{ equipment.status }}">
+        </div>
+        <div class="input-group col-6 mt-2 pl-0">
+            <div class="input-group-prepend">
+                <span class="input-group-text">轮播开关</span>
+            </div>
+            {% if equipment.wheel %}
+                <input type="text" class="form-control" readonly value="打开" name="wheel_status">
+                <div class="input-group-append">
+                    <button class="btn btn-primary" name="change_wheel_status">关闭轮播</button>
+                </div>
+            {% else %}
+                <input type="text" class="form-control" readonly value="关闭">
+                <div class="input-group-append">
+                    <button class="btn btn-primary" name="change_wheel_status">打开轮播</button>
+                </div>
+            {% endif %}
+        </div>
+        <div class="input-group col-6 mt-2 pl-0">
+            <div class="input-group-prepend">
+                <span class="input-group-text">播放时间</span>
+            </div>
+            <input type="text" class="form-control" readonly value="{{ equipment.start_time }}-{{ equipment.end_time }}">
+            <div class="input-group-append">
+                <button class="btn btn-primary" name="set_play_time">修改播放时间</button>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="container-fluid">
+            <div class="row mt-2">
+                <button class="btn btn-primary" name="send_program_to_equipment">推送节目</button>
+                <button class="btn btn-primary" name="send_program_to_equipment">立即播放</button>
+            </div>
+            <div class="row mt-2">
+                <table class="table table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">节目名称</th>
+                            <th scope="col">分辨率</th>
+                            <th scope="col">播放时长</th>
+                            <th scope="col">文件大小(M)</th>
+                            <th scope="col">是否在播放列表</th>
+                            <th scope="col">操作</th>
+                        </tr>
+                    </thead>
+                    {% for program in programs %}
+                        <tr>
+                            <td>{{ program|get_item:"name" }}</td>
+                            <td>{{ program|get_item:"scale_type" }}</td>
+                            <td>{{ program|get_item:"duration" }}</td>
+                            <td>{{ program|get_item:"storage" }}</td>
+                            {% if program|get_item:"index" == -1 %}
+                                <td>否</td>
+                                <td>
+                                    <a class="btn btn-link" href="{% url 'appipark1:program_view' program|get_item:"name" %}">预览</a>
+                                    <button class="btn btn-link" name="delete_program_from_equipment" obj_name="{{ program|get_item:"name" }}">从设备上移除</button>
+                                    <button class="btn btn-link" name="add_program_to_play_list" obj_name="{{ program|get_item:"name" }}">添加到播放列表</button>
+                                </td>
+                            {% else %}
+                                <td>是</td>
+                                <td>
+                                    <a class="btn btn-link" href="{% url 'appipark1:program_view' program|get_item:"name" %}">预览</a>
+                                    <button class="btn btn-link" name="delete_program_from_equipment" obj_name="{{ program|get_item:"name" }}">从设备上移除</button>
+                                    <button class="btn btn-link" name="delete_program_from_play_list" obj_name="{{ program|get_item:"name" }}">移出播放列表</button>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% empty %}
+                        暂未推送节目到设备
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_script %}
+<script>
+// 推送
+$(document).on('click', 'button[name="send_program_to_equipment"]', function () {
+    let post_data = get_formdata('query_programs');
+    myajax('{% url "appipark1:query" %}', post_data, function (respon) {
+        if (respon.programs.length === 0) {
+            layer.msg('没有可供推送的节目');
+        } else {
+            let title = '推送节目到设备';
+            let content = get_content_of_programs(respon.programs);
+            let index_modal = show_modal(title, content, function () {
+                layer.close(index_modal);
+                let post_data = get_formdata('send_program_to_equipment');
+                let $input = $('input[name="program_obj"]:checked');
+                for (inp of $input) {
+                    post_data.append('program_name', $(inp).attr('obj_name'))
+                }
+                myajax('', post_data, function () {
+                    window.location.href = '';
+                });
+            });
+        }
+    });
+});
+
+function get_content_of_programs(programs) {
+    const ul_fmt = '<ul class="list-group">{0}</ul>';
+    const checkbox_input_li_fmt = '<li class="list-group-item"><input type="checkbox" name="program_obj" obj_name="{0}">{0}</li>';
+    let arr_lis = [];
+    for (program of programs) {
+        arr_lis.push(checkbox_input_li_fmt.format(program.name));
+    }
+    return ul_fmt.format(arr_lis.join(''));
+}
+
+// 从设备上移除节目
+$(document).on('click', 'button[name="delete_program_from_equipment"]', function () {
+    let program_name = $(this).attr('obj_name');
+    let equipment_name = $('input[name="equipment_name"]').val();
+    layer.confirm('确定要从 "{0}" 设备上删除节目 "{1}"'.format(equipment_name, program_name), function () {
+        let post_data = get_formdata('delete_program_from_equipment');
+        post_data.append('program_name', program_name);
+        myajax('', post_data, function () {
+            window.location.href = '';
+        });
+    });
+});
+
+// 修改轮播状态
+$(document).on('click', 'button[name="change_wheel_status"]', function () {
+    let wheel_status = $('input[name="wheel_status"]').val();
+    let post_data = get_formdata('change_wheel_status');
+    myajax('', post_data, function () {
+        window.location.href = '';
+    });
+});
+
+// 添加到播放列表
+$(document).on('click', 'button[name="add_program_to_play_list"]', function () {
+    let program_name = $(this).attr('obj_name');
+    let post_data = get_formdata("add_program_to_play_list");
+    post_data.append('program_name', program_name);
+    myajax('', post_data, function () {
+        window.location.href = '';
+    });
+});
+
+// 移除播放列表
+$(document).on('click', 'button[name="delete_program_from_play_list"]', function () {
+    let program_name = $(this).attr('obj_name');
+    let post_data = get_formdata("delete_program_from_play_list");
+    post_data.append('program_name', program_name);
+    myajax('', post_data, function () {
+        window.location.href = '';
+    });
+});
+
+// 修改播放时间
+$(document).on('click', 'button[name="set_play_time"]', function () {
+    let title = '修改播放时间';
+    let content = '<form name="set_play_time" class="form-group mt-2"><div class="input-group"><div class="input-group-prepend"><span class="input-group-text">开始时间</span></div><input type="text" class="form-control" name="time_start"></div><div class="input-group"><div class="input-group-prepend"><span class="input-group-text">结束时间</span></div><input type="text" class="form-control" name="time_end"></div></form>';
+    show_modal(title, content, function () {
+        let post_data = get_formdata('set_play_time');
+        myajax('', post_data, function () {
+            window.location.href = '';
+        });
+    });
+});
+</script>
+{% endblock %}

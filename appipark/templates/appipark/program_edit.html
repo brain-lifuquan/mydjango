@@ -1,0 +1,641 @@
+{% extends 'appipark/base.html' %}
+
+{% block page_body %}
+<div>
+    <div style="position: relative; z-index: 100;"> {# 画板容器 #}
+        <canvas style="position: absolute; z-index: 100; top: 0; left: 0; border-bottom: black 1px dashed; border-right: black 1px dashed;" id="program_canvas" width="{{ width }}" height="{{ height }}">您的浏览器不支持canvas标签,建议使用谷歌浏览器浏览本页面</canvas>
+        <div style="position: absolute; z-index: 99; top: 0; left: 0;" name="bg_image_container"></div>
+        <div style="width: {{ width }}px; height: {{ height }}px;" class="groups_container" name="groups_container"></div>
+    </div>
+    <div style="position: fixed; z-index: 200; bottom: 20px;"> {# 信息容器 #}
+        <div class="form-inline ml-3">
+            <div class="form-group mr-2">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">节目名称</div>
+                </div>
+                <input type="text" class="form-control" value="{{ program_name }}" name="program_name">
+            </div>
+            <div class="form-group mr-2">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">分辨率</div>
+                </div>
+                <input type="text" class="form-control" value="{{ width }}*{{ height }}" size="7" readonly>
+            </div>
+            <div class="form-group mr-2">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">时长</div>
+                </div>
+                <input type="text" class="form-control" value="{{ duration }}" size="1" name="program_duration">
+                <div class="input-group-append">
+                    <div class="input-group-text">秒</div>
+                </div>
+            </div>
+            <button class="btn btn-primary mr-2" name="set_bg_image">设置背景图片</button>
+            <button class="btn btn-primary mr-2" name="add_material_group">添加素材容器</button>
+            <button class="btn btn-primary" name="save_program">保存</button>
+        </div>
+    </div>
+    <div style="position: fixed; z-index: 200; right: 0; top: 100px; display: none; width: 300px" name="group_info_container" class="p-0">
+        <button class="btn btn-primary" name="add_material">添加素材</button>
+        <button class="btn btn-primary" name="delete_group">删除素材组</button>
+        <button class="btn btn-primary" name="cancel_selected">取消选中</button>
+        <div class="form-row m-0">
+            <div class="col p-0">
+                <div class="input-group input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">left</span>
+                    </div>
+                    <input type="text" class="form-control" name="material_group_left" value="">
+                    <div class="input-group-append">
+                        <span class="input-group-text">px</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col p-0">
+                <div class="input-group input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">top</span>
+                    </div>
+                    <input type="text" class="form-control" name="material_group_top" value="">
+                    <div class="input-group-append">
+                        <span class="input-group-text">px</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-row m-0">
+            <div class="col p-0">
+                <div class="input-group input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">width</span>
+                    </div>
+                    <input type="text" class="form-control" name="material_group_width" value="">
+                    <div class="input-group-append">
+                        <span class="input-group-text">px</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col p-0">
+                <div class="input-group input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">height</span>
+                    </div>
+                    <input type="text" class="form-control" name="material_group_height" value="">
+                    <div class="input-group-append">
+                        <span class="input-group-text">px</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-row m-0">
+            <div class="col p-0">
+                <div class="input-group input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">start</span>
+                    </div>
+                    <input type="text" class="form-control" name="material_group_start" value="">
+                    <div class="input-group-append">
+                        <span class="input-group-text">秒</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col p-0">
+                <div class="input-group input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">duration</span>
+                    </div>
+                    <input type="text" class="form-control" name="material_group_duration" value="">
+                    <div class="input-group-append">
+                        <span class="input-group-text">秒</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div name="materials_info"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_script %}
+<script>
+$(document).ready(function () {
+    // 绘制canvas坐标系
+    drawcanvas();
+
+    // 初始化的节目信息
+    window.program = {
+        name: $('input[name="program_name"]').val(),
+        bg_image: null,
+        duration: Number($('input[name="program_duration"]').val()),
+        groups: [],
+        index_selected: -1,
+    };
+
+    // 从服务器获取获取节目信息
+    let post_data = get_formdata('get_program_json');
+    myajax('', post_data, function (respon) {
+        let program = JSON.parse(respon.json);
+        window.program.duration = program.duration;
+        window.program.bg_image = {
+            name: program.bg_image_name,
+            url: program.bg_image_url,
+        };
+        console.log(window.program);
+        refresh_bg_image_display();
+        for (grp of program.groups) {
+            let group = {
+                size: grp.size,
+                position: grp.position,
+                duration: {
+                    start: grp.duration.start,
+                    duration: grp.duration.end - grp.duration.start,
+                },
+                materials: [],
+            };
+            for (inp of grp.inputs) {
+                group.materials.push({
+                    url: inp.url,
+                    name: inp.name,
+                    type: inp.type,
+                    duration: inp.duration.end - inp.duration.start,
+                });
+            }
+            window.program.groups.push(group);
+        }
+        refresh_groups_container();
+    });
+});
+
+// 点击添加素材容器按钮
+$(document).on('click', 'button[name="add_material_group"]', function () {
+    // 全局变量window.program.groups上添加1个新的group
+    let index = window.program.groups.length;
+    let group = get_init_group(index, 100, 300, 300);
+    window.program.groups.push(group);
+    // 刷新 $groups_container 内容
+    refresh_groups_container();
+});
+
+// 删除素材组
+$(document).on('click', 'button[name="delete_group"]', function () {
+    // 获取选中的index
+    let index = window.program.index_selected;
+    // 删除groups中对应index的元素
+    window.program.groups.splice(index, 1);
+    // 重置index_selected
+    window.program.index_selected = -1;
+    refresh_groups_container();
+    refresh_group_info();
+});
+
+// 改变素材组大小
+$(document).on('resizestop', 'div[name="material_group"]', function (event, ui) {
+    // 获取group的index
+    let index = $(this).attr('index');
+    let group = window.program.groups[index];
+    group.size = ui.size;
+    refresh_groups_container();
+    refresh_group_info();
+});
+// 改变素材位置
+$(document).on('dragstop', 'div[name="material_group"]', function (event, ui) {
+    // 获取group的index
+    let index = $(this).attr('index');
+    let group = window.program.groups[index];
+    group.position = ui.position;
+    refresh_groups_container();
+    refresh_group_info();
+});
+
+// 获取初始化的素材组
+function get_init_group(index, offset, width, height) {
+    return {
+        position: {
+            top: index * offset < {{ height }} - height ? index * offset : {{ height }} - height,
+            left: index * offset < {{ width }} - width ? index * offset : {{ width }} - width
+        },
+        size: {
+            width: width,
+            height: height,
+        },
+        materials: [],
+        duration: {
+            start: 0,
+            duration: window.program.duration,
+        }
+    }
+}
+
+// 选中素材组
+$(document).on('click', 'div[name="material_group"]', function () {
+    // 更新index
+    window.program.index_selected = $(this).attr('index');
+    // 更新groups显示
+    refresh_groups_container();
+    // 更新group_info显示
+    refresh_group_info();
+});
+
+// 刷新group_info显示
+function refresh_group_info() {
+    // 获取被选中的group index
+    const material_info_fmt = '<div class="card"><div class="card-header">{0}<div class="input-group input-group-sm"><div class="input-group-prepend"><span class="input-group-text">持续时长</span></div><input type="text" class="form-control" name="material_duration" value="{1}" index="{2}"><div class="input-group-append"><span class="input-group-text">秒</span></div></div></div><button class="btn btn-link" name="delete_material" style="position: absolute; top: 0; right: 0;" index="{2}"><svg class="bi bi-x text-danger" width="2em" height="2em" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.646 5.646a.5.5 0 000 .708l8 8a.5.5 0 00.708-.708l-8-8a.5.5 0 00-.708 0z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M14.354 5.646a.5.5 0 010 .708l-8 8a.5.5 0 01-.708-.708l8-8a.5.5 0 01.708 0z" clip-rule="evenodd"/></svg></button></div>';
+    let index = window.program.index_selected;
+    let $group_info = $('div[name="group_info_container"]');
+    if (index === -1) {
+        // 如果没有被选中的index， 设置不显示
+        $group_info.css('display', 'none');
+    } else {
+        // 显示测边框并更新数值
+        let group = window.program.groups[index];
+        $group_info.css('display', 'block');
+        $group_info.find('input[name="material_group_left"]').val(group.position.left);
+        $group_info.find('input[name="material_group_top"]').val(group.position.top);
+        $group_info.find('input[name="material_group_width"]').val(group.size.width);
+        $group_info.find('input[name="material_group_height"]').val(group.size.height);
+        $group_info.find('input[name="material_group_start"]').val(group.duration.start);
+        $group_info.find('input[name="material_group_duration"]').val(group.duration.duration);
+        let arr_material_info_html = [];
+        for (let i in group.materials) {
+            let material = group.materials[i];
+            arr_material_info_html.push(material_info_fmt.format(material.name, material.duration, i));
+        }
+        $('div[name="materials_info"]').html(arr_material_info_html.join(''));
+    }
+}
+
+// 点击取消选中按钮
+$(document).on('click', 'button[name="cancel_selected"]', function () {
+    // 将被选中的index重置为-1 并刷新显示
+    window.program.index_selected = -1;
+    refresh_groups_container();
+    refresh_group_info();
+});
+
+// 修改节目属性
+$(document).on('change', 'input[name="program_name"]', function () {
+    window.program.name = $(this).val();
+});
+$(document).on('change', 'input[name="program_duration"]', function () {
+    window.program.duration = Number($(this).val());
+});
+
+// 修改input更新位置
+$(document).on('change', 'input[name="material_group_left"]', function () {
+    let group = window.program.groups[window.program.index_selected];
+    let max_left = {{ width }} - group.size.width;
+    let input_left = $(this).val();
+    if (input_left > max_left) {
+        // 设置值超过边界
+        $(this).val(max_left);
+        group.position.left = max_left;
+    } else {
+        group.position.left = input_left;
+    }
+    refresh_groups_container();
+});
+$(document).on('change', 'input[name="material_group_top"]', function () {
+    let group = window.program.groups[window.program.index_selected];
+    let max_top = {{ height }} - group.size.height;
+    let input_top = $(this).val();
+    if (input_top > max_top) {
+        $(this).val(max_top);
+        group.position.top = max_top;
+    } else {
+        group.position.top = input_top;
+    }
+    refresh_groups_container();
+});
+$(document).on('change', 'input[name="material_group_width"]', function () {
+    let group = window.program.groups[window.program.index_selected];
+    let max_width = {{ width }} - group.position.left;
+    let input_width = $(this).val();
+    if (input_width > max_width) {
+        $(this).val(max_width);
+        group.size.width = max_width;
+    } else {
+        group.size.width = input_width;
+    }
+    refresh_groups_container();
+});
+$(document).on('change', 'input[name="material_group_height"]', function () {
+    let group = window.program.groups[window.program.index_selected];
+    let max_height = {{ height }} - group.position.top;
+    let input_height = $(this).val();
+    if (input_height > max_height) {
+        $(this).val(max_height);
+        group.size.height = max_height;
+    } else {
+        group.size.height = input_height;
+    }
+    refresh_groups_container();
+});
+
+//修改素材组的duration
+$(document).on('change', 'input[name="material_group_start"]', function () {
+    let group_start = Number($('input[name="material_group_start"]').val());
+    let group_duration = Number($('input[name="material_group_duration"]').val());
+    let max_start = window.program.duration - group_duration;
+    if (group_start > max_start) {
+        layer.msg('持续时间不能超过节目总时长');
+        group_start = max_start;
+        $(this).val(group_start);
+    }
+    let index = window.program.index_selected;
+    let group = window.program.groups[index];
+    group.duration.start = group_start;
+});
+$(document).on('change', 'input[name="material_group_duration"]', function () {
+    let group_start = Number($('input[name="material_group_start"]').val());
+    let group_duration = Number($('input[name="material_group_duration"]').val());
+    let max_duration = window.program.duration - group_start;
+    if (group_duration > max_duration) {
+        layer.msg('持续时间不能超过节目总时长');
+        group_duration = max_duration;
+        $(this).val(group_duration);
+    }
+    let index = window.program.index_selected;
+    let group = window.program.groups[index];
+    group.duration.duration = group_duration;
+});
+
+// 修改素材的duration
+$(document).on('change', 'input[name="material_duration"]', function () {
+    let material_index = $(this).attr('index');
+    let material_duration = Number($(this).val());
+    let program_duration = window.program.duration;
+    let other_materials_duration = 0;
+    let index = window.program.index_selected;
+    let group = window.program.groups[index];
+    for (let i in group.materials) {
+        if (i !== material_index) {
+            other_materials_duration += group.materials[i].duration;
+        }
+    }
+    if( material_duration + other_materials_duration > program_duration) {
+        layer.msg("时长合计不能超过节目时长");
+        material_duration = program_duration - other_materials_duration;
+        $(this).val(material_duration);
+    }
+    group.materials[material_index].duration = material_duration;
+});
+
+// 设置桌面背景
+$(document).on('click', 'button[name="set_bg_image"]', function () {
+    let post_data = get_formdata('query_materials');
+    post_data.append('material_type', 'bg_image');
+    myajax('{% url "appipark1:query" %}', post_data, function (respon) {
+        // 弹出选择图片窗口
+        let title = '选择背景素材';
+        let content = get_materials_as_ul_html(respon.materials);
+        let index_modal = show_modal(title, content, function () {
+            layer.close(index_modal);
+            // 更新全局变量
+            let $input = $('input[name="material_obj"]:checked');
+            window.program.bg_image = {
+                url: $input.attr('obj_url'),
+                name: $input.attr('obj_name'),
+            };
+            // 更新背景图片显示
+            refresh_bg_image_display();
+        });
+    });
+});
+
+// 刷新背景图片显示
+function refresh_bg_image_display() {
+    // 刷新背景图片显示
+    let $div_bg_image = $('div[name="bg_image_container"]');
+    if (window.program.bg_image) {
+        // 如果存在
+        let bg_image_html = '<img style="width: {{ width }}px; height: {{ height }}px; opacity: 0.7;" src="{0}" alt="图片跑丢了">'.format(window.program.bg_image.url);
+        $div_bg_image.html(bg_image_html);
+    } else {
+        // 如果不存在
+        $div_bg_image.html('');
+    }
+}
+
+// 添加素材
+$(document).on('click', 'button[name="add_material"]', function () {
+    let post_data = get_formdata('query_materials');
+    post_data.append('material_type', 'image&&video');
+    myajax('{% url "appipark1:query" %}', post_data, function (respon) {
+        let title = '选择素材';
+        let content = get_materials_as_ul_html(respon.materials, true);
+        let index_modal = show_modal(title, content, function () {
+            layer.close(index_modal);
+            // 更新全局变量
+            let $input = $('input[name="material_obj"]:checked');
+            for (inp of $input) {
+                // 获取material信息
+                let material = {
+                    url: $(inp).attr('obj_url'),
+                    name: $(inp).attr('obj_name'),
+                    type: $(inp).attr('obj_type'),
+                    duration: 0,
+                };
+                // 将获取到的material加入到group
+                let index = window.program.index_selected;
+                let group = window.program.groups[index];
+                group.materials.push(material);
+            }
+            // 更新显示
+            refresh_groups_container();
+            refresh_group_info();
+        });
+    });
+});
+
+// 从后台获取的素材列表转化成弹窗html
+function get_materials_as_ul_html(materials, multiple) {
+    const ul_fmt = '<ul class="list-group">{0}</ul>';
+    const ul_li_fmt = '<li class="list-group-item"><ul class="list-group">{0}{1}</ul></li>';
+    const radio_input_li_fmt = '<li class="list-group-item"><input type="radio" name="material_obj" obj_url="{0}" obj_name="{1}">{1}</li>';
+    const checkbox_input_li_fmt = '<li class="list-group-item"><input type="checkbox" name="material_obj" obj_url="{0}" obj_name="{1}" obj_type="{2}">{1}</li>';
+    let arr_uls = [];
+    let propertys = Object.getOwnPropertyNames(materials);
+    if (propertys.length === 1) {
+        let arr_lis = [];
+        let material_type = propertys[0];
+        let arr_materials = materials[material_type];
+        for (material of arr_materials) {
+            let input_li_fmt = multiple ? checkbox_input_li_fmt : radio_input_li_fmt;
+            arr_lis.push(input_li_fmt.format(material.url, material.name, material_type));
+        }
+        arr_uls.push(ul_fmt.format(arr_lis.join('')));
+    } else {
+        let arr_property_uls = [];
+        for (material_type of propertys) {
+            let arr_lis = [];
+            let arr_materials = materials[material_type];
+            for (material of arr_materials) {
+                let input_li_fmt = multiple ? checkbox_input_li_fmt : radio_input_li_fmt;
+                arr_lis.push(input_li_fmt.format(material.url, material.name, material_type));
+            }
+            arr_property_uls.push(ul_li_fmt.format(material_type, arr_lis.join('')));
+        }
+        arr_uls.push(ul_fmt.format(arr_property_uls.join('')));
+    }
+    return arr_uls.join('');
+}
+
+$(document).on('click', 'button[name="delete_material"]', function () {
+    let index = window.program.index_selected;
+    let group = window.program.groups[index];
+    let material_index = $(this).attr('index');
+    // 从素材列表中删除对应元素
+    group.materials.splice(material_index, 1);
+    refresh_groups_container();
+    refresh_group_info();
+});
+
+$(document).on('click', 'button[name="save_program"]', function () {
+    let post_data = get_formdata('save_program');
+    post_data.append('program', JSON.stringify(window.program));
+    myajax('', post_data, function (respon) {
+        window.location.href = '{% url "appipark1:program_list" %}';
+    });
+});
+
+// 刷新 $groups_container 内容
+function refresh_groups_container() {
+    // 正常模板
+    const group_html_fmt = '<div style="border: black dashed 1px; position: absolute; z-index: 101; top: {0}px; left: {1}px; width: {2}px; height: {3}px;" name="material_group" index="{4}">';
+    // 被选中的模板
+    const group_html_selected_fmt = '<div style="border: black solid 1px; position: absolute; z-index: 101; top: {0}px; left: {1}px; width: {2}px; height: {3}px;" name="material_group" index="{4}">';
+    let htmls = [];
+    for (let i in window.program.groups) {
+        let group = window.program.groups[i];
+        let group_html = '';
+        if (Number(i) === Number(window.program.index_selected)) {
+            //选中的group
+            group_html = group_html_selected_fmt.format(group.position.top, group.position.left, group.size.width, group.size.height, i);
+        } else {
+            //未选中的group
+            group_html = group_html_fmt.format(group.position.top, group.position.left, group.size.width, group.size.height, i);
+        }
+        // 添加group内容
+        for (material of group.materials) {
+            let material_html = get_material_html(material, group);
+            group_html += material_html;
+        }
+        group_html += '</div>';
+        htmls.push(group_html);
+    }
+    let $groups_container =  $('div[name="groups_container"]');
+    $groups_container.html(htmls.join(''));
+    // 设置draggable和resizeable
+    $('div[name="material_group"]').draggable({containment: $groups_container, scroll: false});
+    $('div[name="material_group"]').resizable({containment: $groups_container});
+}
+
+// 将素材转化成html显示
+function get_material_html(material, group) {
+    const video_fmt = '<video src="{0}" controls="controls" width="{1}" height="{2}" style="opacity: 0.7; position: absolute;">您的浏览器不支持video标签</video>';
+    const image_fmt = '<img src="{0}" alt="图片跑丢了" width="{1}" height="{2}" style="opacity: 0.7; position: absolute;">';
+    let material_html = '';
+    if (material.type === 'video') {
+        material_html = video_fmt.format(material.url, group.size.width, group.size.height);
+    } else if (material.type === 'image') {
+        material_html = image_fmt.format(material.url, group.size.width, group.size.height);
+    }
+    return material_html;
+}
+
+// 坐标系
+function drawcanvas() {
+    // canvas 网格及坐标系
+    let canvas = document.getElementById('program_canvas');
+    window.context = canvas.getContext('2d');
+    // 设置颜色 并画底层网格
+    drawGrid('lightgray', 0.5, 10, 10);
+    // 坐标轴与canvas原点的偏移
+    let axis_margin = 0;
+    drawAxis('blue', 1.0, axis_margin);
+    drawAxisTicks('navy', 0.5, 'blue', axis_margin, 10, 10, 15);
+
+    function drawGrid (strokeStyle, line_width, stepX, stepY) {
+        // 画底层网格 stepX stepY 分别是x轴y轴的间隔值
+        let context = window.context;
+        context.save();
+        // 设置线条样式
+        context.strokeStyle = strokeStyle;
+        context.lineWidth = line_width;
+        // 画纵线
+        for (let i = stepX + 0.5; i < context.canvas.width; i += stepX) {
+            context.beginPath();
+            context.moveTo(i, 0);
+            context.lineTo(i, context.canvas.height);
+            context.stroke();
+        }
+        // 画横线
+        for (let i = stepY + 0.5; i < context.canvas.height; i += stepY) {
+            context.beginPath();
+            context.moveTo(0, i);
+            context.lineTo(context.canvas.width, i);
+            context.stroke();
+        }
+    }
+
+    function drawAxis(strokeStyle, line_width, axis_margin) {
+        // 画坐标轴
+        let context = window.context;
+        context.save();
+        // 设置线条样式
+        context.strokeStyle = strokeStyle;
+        context.lineWidth = line_width;
+        // 画横轴
+        context.beginPath();
+        context.moveTo(axis_margin, axis_margin);
+        context.lineTo(context.canvas.width - axis_margin, axis_margin);
+        context.stroke();
+        // 画纵轴
+        context.beginPath();
+        context.moveTo(axis_margin, axis_margin);
+        context.lineTo(axis_margin, context.canvas.height - axis_margin);
+        context.stroke();
+    }
+
+    function drawAxisTicks(strokeStyle, line_width, fillStyle, axis_margin, tick_width, tick_spacing, label_spacing) {
+        let context = window.context;
+        context.save();
+        // 设置线条样式
+        context.strokeStyle = strokeStyle;
+        context.lineWidth = line_width;
+        context.fillStyle = fillStyle;
+        let delta;
+        let num_vertical_ticks = (context.canvas.height - axis_margin*2) / tick_width;
+        let num_horizontal_ticks = (context.canvas.width - axis_margin*2) / tick_width;
+        // 画纵坐标
+        context.textAlign = 'left';
+        context.textBaseline = 'middle';
+        for (let i = 1; i < num_vertical_ticks; i++) {
+            context.beginPath();
+            //每5第五个刻度为长的小刻度
+            delta = i % 5 === 0 ? tick_width : tick_width / 2;
+            context.moveTo(axis_margin - delta, axis_margin + i * tick_spacing);
+            context.lineTo(axis_margin + delta, axis_margin + i * tick_spacing);
+            context.stroke();
+            if (i % 5 === 0) {
+                context.fillText(axis_margin + i * tick_spacing, axis_margin + label_spacing, axis_margin + i * tick_spacing);
+            }
+        }
+        // 画横坐标
+        context.textAlign = 'center';
+        context.textBaseline = 'top';
+        for (let i = 1; i < num_horizontal_ticks; i++) {
+            context.beginPath();
+            //每5第五个刻度为长的小刻度
+            delta = i % 5 === 0 ? tick_width : tick_width / 2;
+            context.moveTo(axis_margin + i * tick_spacing, axis_margin - delta);
+            context.lineTo(axis_margin + i * tick_spacing, axis_margin + delta);
+            context.stroke();
+            if (i % 5 === 0) {
+                context.fillText(axis_margin + i * tick_spacing, axis_margin + i * tick_spacing, axis_margin + label_spacing);
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

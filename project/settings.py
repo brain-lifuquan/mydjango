@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     # 自定义app
     'app.apps.AppConfig',
     'appnpo.apps.AppnpoConfig',
+    'appipark.apps.AppiparkConfig',
     # 系统app
     'django.contrib.admin',
     'django.contrib.auth',
@@ -90,7 +91,11 @@ DATABASES = {
     'appnpo': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR.joinpath('appnpo', 'appnpo.db'),
-    }
+    },
+    'appipark': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR.joinpath('appipark', 'appipark.db'),
+    },
 }
 
 # 使用多数据库时,需要配置 数据库选择器
@@ -99,6 +104,7 @@ DATABASE_ROUTERS = ['app.utils.database_router.DatabaseAppRouter']
 # migrate时的对应关系 key:value 分别对应 app_lable 和 database_name 建议取相同的名字
 DATABASE_APPS_MAPPING = {
     'appnpo': 'appnpo',
+    'appipark': 'appipark',
 }
 
 

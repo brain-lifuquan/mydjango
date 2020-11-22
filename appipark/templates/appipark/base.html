@@ -1,0 +1,37 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+        {# page_hea块 有些模块（如百度地图）需要放在jquery之前导入，某则会出错，可以放在这个模块当中 #}
+        {% block page_head %}{% endblock %}
+        {# jquery #}
+        <script src="{% static 'utils/jquery/jquery-3.4.1.min.js' %}"></script>
+        {# jquery-ui #}
+        <script src="{% static 'utils/jquery-ui/jquery-ui.min.js' %}"></script>
+        <link rel="stylesheet" href="{% static 'utils/jquery-ui/jquery-ui.min.css' %}">
+        {# popper 是bootstrap4一些功能的前置 #}
+        <script src="{% static 'utils/popper/popper.js' %}"></script>
+        {# bootstrap4 #}
+        <link rel="stylesheet" href="{% static 'utils/bootstrap4/css/bootstrap.css' %}">
+        <script src="{% static 'utils/bootstrap4/js/bootstrap.js' %}"></script>
+        {# layer 弹窗插件 #}
+        <script src="{% static 'utils/layer/layer.js' %}"></script>
+
+        {# 自定义的base.js #}
+        <script src="{% static 'appipark1/base.js' %}"></script>
+
+        {# 解决 Not Found: /favicon.ico #}
+        <link REL="SHORTCUT ICON" HREF="{% static 'img/fjthcc.ico' %}" />
+        {% if title%}
+            <title>{{ title }}</title>
+        {% endif %}
+    </head>
+    <body>
+        {# page_body块 页面主要内容 #}
+        {% block page_body %}{% endblock %}
+        {# csrf_token #}
+        <div>{% csrf_token %}</div>
+        {# page_script块 页面脚本 #}
+        {% block page_script %}{% endblock %}
+    </body>
+</html>

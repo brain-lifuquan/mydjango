@@ -1,0 +1,27 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <link REL="SHORTCUT ICON" HREF="{% static 'img/fjthcc.ico' %}" />
+    <script src="{% static 'utils/jquery/jquery-3.4.1.min.js' %}"></script>
+    <script src="{% static 'utils/popper/popper.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'utils/bootstrap4/css/bootstrap.css' %}">
+    <script src="{% static 'utils/bootstrap4/js/bootstrap.js' %}"></script>
+    {% if title%}
+    <title>{{ title }}</title>
+    {% endif%}
+</head>
+<body>
+<div class="container-fluid col-5 mt-3">
+    <h1>appipark.index</h1>
+</div>
+<div class="container-fluid col-5 mt-3">
+    <ul class="list-group">
+        <li class="list-group-item"><a href="{% url 'ipark:material_list' 'video' %}">素材列表-视频</a></li>
+        <li class="list-group-item"><a href="{% url 'ipark:program_list' %}">节目列表</a></li>
+        <li class="list-group-item"><a href="{% url 'ipark:equipment_list' %}">设备列表</a></li>
+    </ul>
+</div>
+</body>
+</html>
