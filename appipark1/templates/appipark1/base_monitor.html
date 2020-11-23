@@ -1,0 +1,23 @@
+{% extends 'appipark1/base.html' %}
+
+{% block pgbody1 %}
+{# 整体 #}
+<div>
+{# 左侧边导航栏 #}
+    <div id="left-menu" class="container-fluid col-12 col-md-2 float-md-left">
+        <div class="row">
+            <nav class="">
+                <ul class="nav d-block">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'ipark1:record' %}">抓拍记录</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'ipark1:blacklist' %}">黑名单管理</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'ipark1:tag' %}">黑名单标签</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'ipark1:equipment' %}">设备管理</a></li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% block pgbody2 %}
+        <div id="right-body" class="container-fluid col-12 col-md-10 float-md-right">右侧</div>
+    {% endblock %}
+</div>
+{% endblock %}

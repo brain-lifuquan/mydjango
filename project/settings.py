@@ -35,6 +35,8 @@ INSTALLED_APPS = [
     'app.apps.AppConfig',
     'appnpo.apps.AppnpoConfig',
     'appipark.apps.AppiparkConfig',
+    'appipark1.apps.Appipark1Config',
+    'appipark2.apps.Appipark2Config',
     # 系统app
     'django.contrib.admin',
     'django.contrib.auth',
@@ -96,6 +98,14 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR.joinpath('appipark', 'appipark.db'),
     },
+    'appipark1': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR.joinpath('appipark1', 'appipark1.db'),
+    },
+    'appipark2': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR.joinpath('appipark2', 'appipark2.db'),
+    },
 }
 
 # 使用多数据库时,需要配置 数据库选择器
@@ -105,6 +115,8 @@ DATABASE_ROUTERS = ['app.utils.database_router.DatabaseAppRouter']
 DATABASE_APPS_MAPPING = {
     'appnpo': 'appnpo',
     'appipark': 'appipark',
+    'appipark1': 'appipark1',
+    'appipark2': 'appipark2',
 }
 
 
@@ -156,3 +168,9 @@ MEDIA_ROOT = BASE_DIR.joinpath('media')
 
 # python manage.py collectstatic
 # STATIC_ROOT = BASE_DIR.joinpath("static/")
+
+# 设置关闭浏览器session自动过期
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# 使用loginrequired的模块需要定义登录url 不满足条件会自动重定向到此目录
+LOGIN_URL = 'ipark1:login'

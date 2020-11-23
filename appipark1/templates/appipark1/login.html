@@ -1,0 +1,31 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="{% static 'bootstrap-4.5.0-dist/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'appipark1/login/login.css' %}" rel="stylesheet">
+    <title>用户登录</title>
+</head>
+<body>
+    <div class="signin">
+        <div class="signin-head">
+            <h1>
+                <img src="{% static 'appipark1/login/fjthcc.ico' %}" alt="">
+                福建天海
+            </h1>
+        </div>
+        <form class="signin-form" method="post" action="{% url 'ipark1:login' %}">
+            {% csrf_token %}
+            <label>
+                <input type="text" class="form-control" placeholder="用户名" required autofocus name="username" />
+            </label>
+            <label>
+                <input type="password" class="form-control" placeholder="密码" required name="password" />
+            </label>
+            <button class="btn btn-lg btn-warning btn-block" type="submit">登录</button>
+            <p class="text-danger">{{ msg }}</p>
+        </form>
+    </div>
+</body>
+</html>

@@ -67,7 +67,7 @@
         {# 正文 #}
         <div class="container">
             {# 卡片集合 #}
-            <div class="card-deck mb-4 text-center">
+            <div class="row row-cols-2 mb-4 text-center">
                 <div class="card mb-4 shadow-sm">
                     <div class="card-header">
                         <h4 class="my-0 font-weight-normal">Npo</h4>
@@ -82,8 +82,26 @@
                         <h4 class="my-0 font-weight-normal">Ipark</h4>
                     </div>
                     <div class="card-body">
-                        <p>智慧园区</p>
+                        <p>智慧园区-大屏</p>
                         <a class="btn btn-lg btn-block btn-outline-primary" href="{% url 'ipark:index' %}">enter ipark</a>
+                    </div>
+                </div>
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header">
+                        <h4 class="my-0 font-weight-normal">Ipark</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>智慧园区-监控</p>
+                        <a class="btn btn-lg btn-block btn-outline-primary" href="{% url 'ipark1:index' %}">enter ipark</a>
+                    </div>
+                </div>
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header">
+                        <h4 class="my-0 font-weight-normal">Ipark</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>智慧园区-班车</p>
+                        <a class="btn btn-lg btn-block btn-outline-primary" href="{% url 'ipark1:index' %}">enter ipark</a>
                     </div>
                 </div>
             </div>

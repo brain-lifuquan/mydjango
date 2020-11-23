@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {# 使用bootstrap4必须添加这一段 #}
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    {# 引入bootstrap4 #}
+    <link rel="stylesheet" href="{% static 'bootstrap-4.5.0-dist/css/bootstrap.css' %}">
+    {# 引入自定义stryle #}
+    <link rel="stylesheet" href="{% static 'appipark1/base/base.css' %}">
+    {# 引入jquery 一般在最前面引入，很多js会以jquery为基础 #}
+    <script src="{% static 'jquery/jquery-3.5.1.min.js' %}"></script>
+    {# 引入popper 必须在bootstrap.js之前引入 #}
+    <script src="{% static 'popper/popper.js' %}"></script>
+    {# 引入layer #}
+    <script src="{% static 'layer/layer.js' %}"></script>
+    {# 引入bootstrap #}
+    <script src="{% static 'bootstrap-4.5.0-dist/js/bootstrap.js' %}"></script>
+    {# 引入自定义js #}
+    <script src="{% static 'appipark1/base/base.js' %}"></script>
+{% block style %}
+    {# 临时性css #}
+{% endblock %}
+{% block script %}
+    {# 页面独立js和临时性js #}
+{% endblock %}
+    <title>{{ title }}</title>
+</head>
+<body>
+<div id="top">
+    <nav class="navbar navbar-expand-md page-head navbar-dark">
+        <a class="nav-link page-head-logo" href="{% url 'ipark1:index' %}">福建天海通信ipark</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#topnavbars" aria-controls="topnavbars" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="topnavbars">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'ipark1:monitor' %}">监控管理</a>
+                </li>
+            </ul>
+            {# 用户操作，欢迎和注销 #}
+            <ul class="navbar-nav">
+                <li>欢迎，{{ username }}</li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'ipark1:logout' %}">注销</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</div>
+{# 内容block #}
+{% block pgbody1 %}
+<div>
+    <div>左侧</div>
+    <div>右侧</div>
+</div>
+{% endblock %}
+</body>
+</html>

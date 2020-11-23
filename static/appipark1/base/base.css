@@ -1,0 +1,31 @@
+.page-head{
+    background: #416497;
+    z-index: 100;
+}
+.page-head-logo{
+    font-size: 1.5rem;
+    color: white;
+}
+
+.page-leftmenu{
+    background: #2b538e;
+}
+@media (min-width: 768px) {
+    .page-leftmenu{
+        z-index: 99;
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        padding-top: 100px;
+    }
+    .page-leftmenu .nav{
+        display: block;
+    }
+}
+.errmsg {
+    color: red;
+}
+table td img {
+    max-height: 100px;
+}

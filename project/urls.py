@@ -27,6 +27,8 @@ urlpatterns = [
     path('npo/', include('appnpo.urls', namespace='npo')),
     # ipark
     path('ipark/', include('appipark.urls', namespace='ipark')),
+    path('ipark1/', include('appipark1.urls', namespace='ipark1')),
+    path('ipark2/', include('appipark2.urls', namespace='ipark2')),
     # 媒体文件
     re_path(r'media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
 ]
