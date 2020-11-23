@@ -1,0 +1,48 @@
+body{
+    background-color: #f8f6e9;
+}
+.signin{
+    width: 480px;
+    height: 400px;
+    background-color: #9acfea;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -200px;
+    margin-left: -240px;
+}
+.signin-head{
+    margin: 20px auto 0;
+    padding-top: 20px;
+    max-width: 250px;
+    height: auto;
+}
+.signin-form{
+    margin: 0 auto;
+    max-width: 350px;
+    padding: 30px 15px 15px;
+}
+.signin-form .form-control{
+    position: relative;
+    font-size: 20px;
+    height: auto;
+}
+.signin-form .form-control:focus{
+    z-index: 2;
+}
+.signin-form input{
+    margin-bottom: 20px;
+    border-radius: 0;
+    padding-left: 60px;
+    color: #FFFFFF;
+}
+.signin-form input[type='text']{
+    background: url(login_user.png) 0 0 #bdbdbd no-repeat;
+}
+.signin-form input[type='password']{
+    background: url(login_pas.png) 0 0 #bdbdbd no-repeat;
+}
+.signin-form p{
+    margin-top: 10px;
+    font-size: 20px;
+}

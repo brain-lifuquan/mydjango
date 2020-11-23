@@ -1,0 +1,38 @@
+{% extends "appipark2/base.html" %}
+{% load static %}
+
+{% block page_body%}
+    <div class="container-fluid col-11">
+        <nav name="page_top" class="row navbar navbar-light" style="background-color: #e3f2fd;">
+            <a class="navbar-brand" href="{% url 'ipark2:index' %}"><img src="{% static 'img/fjthcc.ico' %}" width="30" height="30" class="d-inline-block align-top" alt="">福建天海通信ipark</a>
+            <ul class="nav nav-tabs mr-auto" name="page_top_menus">
+                <li class="nav-item" name="page_top_menu"><a class="nav-link" href="{% url 'ipark2:route' %}">线路列表</a></li>
+                <li class="nav-item" name="page_top_menu"><a class="nav-link" href="{% url 'ipark2:vehicle' %}">车辆列表</a></li>
+                <li class="nav-item" name="page_top_menu"><a class="nav-link" href="{% url 'ipark2:equipment' %}">设备列表</a></li>
+                <li class="nav-item" name="page_top_menu"><a class="nav-link" href="{% url 'ipark2:location' %}">定位记录</a></li>
+            </ul>
+            <ul class="nav">
+                <li class="nav-item"><a class="nav-link">欢迎, {{ request.user.username }}</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'ipark2:logout' %}">注销<span class="sr-only">(current)</span></a></li>
+            </ul>
+        </nav>
+        <div name="page_body" class="row">
+            {% block page_body1 %}
+            {% endblock %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block page_script %}
+<script type="text/javascript">
+// 设置当前标签 active
+for(const url of $('ul[name="page_top_menus"] li[name="page_top_menu"]')){
+    let a = $(url).find('a');
+    if(a.attr('href') === window.location.pathname){
+        a.addClass('active');
+    }
+}
+</script>
+    {% block page_script1 %}
+    {% endblock %}
+{% endblock %}

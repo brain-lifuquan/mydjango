@@ -1,0 +1,53 @@
+{% extends 'appipark2/base_route_manage.html' %}
+
+{% block page_body1 %}
+<div class="container-fluid">
+    <div class="row mt-3">
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">序号</th>
+                    {% for field in fields %}
+                        <th scope="col">{{ field.verbose_name }}</th>
+                    {% endfor %}
+                    <th scope="col">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for obj in obj_list %}
+                <tr>
+                    <th scope="row">{{ forloop.counter }}</th>
+                    {% for field in fields %}
+                        {% for key, value in obj.items %}
+                            {% if key == field.name %}
+                            <td>{{ value }}</td>
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                    <td>
+                        <button type="button" class="btn btn-link" name="delete_obj" objname="{{obj.name}}">删除</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_script1 %}
+<script type="text/javascript">
+//注册 delete_obj 按钮
+$(document).on('click', 'button[name="delete_obj"]', function () {
+    let objname = this.getAttribute("objname");
+    layer.confirm('确定要删除{{ modelname }}--{0}???'.format(objname), {btn: ['确定','返回']}, function () {
+        let post_data = new FormData();
+        post_data.append('post_type', 'delete_obj');
+        post_data.append('objname', objname);
+        $.ajax({url:'', type:'post', contentType:false, processData:false, dataType:'json', data:post_data, success:function(respon){if(respon.msg !== 'success'){layer.msg(JSON.stringify(respon.errmsg));}else{
+            location.href = "";
+        }}});
+    });
+});
+</script>
+{% endblock %}

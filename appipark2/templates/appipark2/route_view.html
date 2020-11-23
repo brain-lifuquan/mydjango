@@ -1,0 +1,155 @@
+{% extends 'appipark2/base_route_manage.html' %}
+{% load static %}
+
+{% block page_body1 %}
+<div class="container-fluid">
+    <div class="row justify-content-center mt-3">
+        <div id="baidumap" class="col-8 div-map" style="height: 550px;"></div>
+        <div class="col-4 h-100">
+            <div>
+                <div name="route_info">
+                </div>
+                <div name="vehicle_location"></div>
+                <div name="stations" class="mt-3"></div>
+            </div>
+            <div>
+                <button class="btn btn-link" name="refresh_location">刷新班车位置</button>
+                <button class="btn btn-link" name="return_route_list">返回</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_script1 %}
+<script type="text/javascript">
+//百度地图
+let map = new BMap.Map("baidumap", {enableMapClick:false});
+map.enableScrollWheelZoom();
+map.addControl(new BMap.MapTypeControl({mapTypes: [BMAP_NORMAL_MAP,BMAP_HYBRID_MAP],anchor: BMAP_ANCHOR_TOP_LEFT}));
+map.addControl(new BMap.OverviewMapControl());
+
+//全局变量
+let arr_stations = [];   //站点信息
+let routepath = [];  //路径信息
+let vehicle = {};
+
+// 页面加载完毕 向服务器获取route相关信息
+$(document).ready(function () {
+    let post_data = new FormData();
+    post_data.append('post_type', 'get_route_fields****get_route_stations****get_routepath****get_vehicle_location');
+    $.ajax({url:'', type:'post', contentType:false, processData:false, dataType:'json', data:post_data, success:function (respon) {if(respon.msg !== 'success'){layer.msg(JSON.stringify(respon.errmsg));}else{
+        for(const station of respon.stations){
+            let point = new BMap.Point(station.lng, station.lat);
+            point.name = station.name;
+            arr_stations.push(point);
+        }
+        for(const point of respon.routepath){
+            let poi = new BMap.Point(point.lng, point.lat);
+            poi.pathindex = point.pathindex;
+            routepath.push(poi);
+        }
+        get_vehicle_form_respon(respon);
+        refresh_div_route_info(respon.route_fields);
+        refresh_div_vehicle_location();
+        refresh_map_overlay();
+        refresh_div_stations();
+    }}});
+});
+
+// 注册返回按钮
+$(document).on('click', "button[name='return_route_list']", function(){
+    window.location.href = "{% url 'appipark:route' %}";
+});
+
+// 注册刷新按钮
+$(document).on('click', "button[name='refresh_location']", function(){
+    let post_data = new FormData();
+    post_data.append('post_type', 'get_vehicle_location');
+    $.ajax({url:'', type:'post', contentType:false, processData:false, dataType:'json', data:post_data, success:function (respon) {if(respon.msg !== 'success'){layer.msg(JSON.stringify(respon.errmsg));}else{
+        get_vehicle_form_respon(respon);
+        refresh_div_vehicle_location();
+        refresh_map_overlay();
+    }}});
+});
+
+function get_vehicle_form_respon(respon) {
+    if (respon.vehicle.onrunning){
+        vehicle.onrunning = '运行中';
+    } else {
+        vehicle.onrunning = '未运行';
+    }
+    if (respon.vehicle.locationtime !== undefined) {
+        vehicle.lng = respon.vehicle.lng;
+        vehicle.lat = respon.vehicle.lat;
+        vehicle.stations = respon.vehicle.stations;
+        vehicle.locationtime = respon.vehicle.locationtime;
+    }
+}
+
+function refresh_div_vehicle_location() {
+    if (vehicle !== undefined){
+        let content = '<div class="mt-3">{0}</div>'.format(vehicle.onrunning);
+        if (vehicle.stations !== undefined) {
+            content += '<div>上一站:{0}</div><div>下一站:{1}</div>'.format(vehicle.stations[0], vehicle.stations[1]);
+        }
+        if (vehicle.locationtime !== undefined) {
+            content += '<div>定位时间:{0}</div>'.format(vehicle.locationtime);
+        }
+        $("div[name='vehicle_location']")[0].innerHTML = content;
+    }
+}
+
+function refresh_div_route_info(fields) {
+    let arr_field_content = [];
+    for (let i=0; i<fields.length; i++){
+        let field = fields[i];
+        let field_content = '<div class="input-group input-group-sm"><div class="input-group-prepend"><span class="input-group-text" id="inputGroup-sizing-sm">{0}</span></div><input type="text" class="form-control" value="{1}" readonly></div>'.format(field.verbose_name, field.value);
+        arr_field_content.push(field_content);
+    }
+    $("div[name='route_info']")[0].innerHTML = arr_field_content.join('');
+}
+
+// 刷新地图覆盖层
+function refresh_map_overlay() {
+    map.clearOverlays();  // 删除目前覆盖层
+    for(let i=0; i<arr_stations.length; i++){
+        let point = arr_stations[i];
+        let marker = new BMap.Marker(point);
+        let label = new BMap.Label("{0}:{1}".format(i+1, point.name), {offset:new BMap.Size(20,-10)});
+        marker.setLabel(label);
+        map.addOverlay(marker);
+    }
+    if (routepath.length > 0) {
+        let polyline = new BMap.Polyline(routepath);
+        map.addOverlay(polyline);
+    }
+    if (vehicle.locationtime !== undefined){
+        let point = new BMap.Point(vehicle.lng, vehicle.lat);
+        let myIcon = new BMap.Icon("{% static 'img/bus.png' %}", new BMap.Size(50,50));
+        let marker = new BMap.Marker(point, {icon:myIcon});
+        let label = new BMap.Label("{0}".format(vehicle.onrunning), {offset:new BMap.Size(50,20)});
+        marker.setLabel(label);
+        map.addOverlay(marker);
+        map.centerAndZoom(point, 14);
+    } else {
+        map.setViewport(arr_stations);
+    }
+}
+
+// 刷新div_stations显示
+function refresh_div_stations() {
+    let arr_div_staions = [];
+    for(let i=0; i<arr_stations.length; i++){
+        let point = arr_stations[i];
+        let div_station = '<div draggable="true" name="station_info"><div class="input-group input-group-sm"><div class="input-group-prepend"><span class="input-group-text">{0}</span></div><input type="text" class="form-control" value="{1}" name="station_name" orderid="{0}" readonly></div></div>'.format(i+1, point.name);
+        arr_div_staions.push(div_station);
+    }
+    $("div[name='stations']")[0].innerHTML = arr_div_staions.join(''); //把内容添加到页面
+}
+</script>
+{% endblock %}
+
+{% block page_head%}
+<script type="text/javascript" src="//api.map.baidu.com/api?v=2.0&ak=aywrDtuOo0A2HFdC5iGMyI1ZllxzdHkW"></script>
+{% endblock %}

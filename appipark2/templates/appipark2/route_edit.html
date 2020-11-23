@@ -1,0 +1,275 @@
+{% extends 'appipark2/base_route_manage.html' %}
+
+{% block page_body1 %}
+<div class="container-fluid">
+    <div class="row justify-content-center mt-3">
+        <div id="baidumap" class="col-8 div-map" style="height: 550px;"></div>
+        <div class="col-4 h-100">
+            <div name="div_edit_route">
+                <form name="route_fields" onsubmit="return false;"></form>
+                <div name="stations" class="mt-3"></div>
+            </div>
+            <div>
+                <button class="btn btn-link" name="enable_add_station">增加站点</button>
+                <button class="btn btn-link" name="search_polylines">刷新行车线路</button>
+                <button class="btn btn-link" name="save_route">保存线路</button>
+                <button class="btn btn-link" name="return_route_list">返回</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_script1 %}
+<script type="text/javascript">
+//百度地图
+let map = new BMap.Map("baidumap", {enableMapClick:false});
+map.enableScrollWheelZoom();
+map.addControl(new BMap.MapTypeControl({mapTypes: [BMAP_NORMAL_MAP,BMAP_HYBRID_MAP],anchor: BMAP_ANCHOR_TOP_LEFT}));
+map.addControl(new BMap.OverviewMapControl());
+
+//全局变量
+let arr_stations = [];   //站点信息
+let routepath = [];  //路径信息
+
+// 几个标志位
+let flag_enable_add_station = false;
+let flag_need_refresh_routepath = false;
+
+// 页面加载完毕 向服务器获取route相关信息
+$(document).ready(function () {
+    let post_data = new FormData();
+    post_data.append('post_type', 'get_route_form_info****get_stations****get_routepath');
+    $.ajax({url:'', type:'post', contentType:false, processData:false, dataType:'json', data:post_data, success:function (respon) {if(respon.msg !== 'success'){layer.msg(JSON.stringify(respon.errmsg));}else{
+        for(const station of respon.stations){
+            let point = new BMap.Point(station.lng, station.lat);
+            point.name = station.name;
+            arr_stations.push(point);
+        }
+        for(const point of respon.routepath){
+            let poi = new BMap.Point(point.lng, point.lat);
+            poi.pathindex = point.pathindex;
+            routepath.push(poi);
+        }
+        refresh_form_route_info(respon.form);
+        refresh_map_overlay();
+        refresh_div_stations();
+    }}});
+});
+
+// 注册事件点击按钮允许在地图上添加站点
+$(document).on('click', 'button[name="enable_add_station"]', function () {
+    flag_enable_add_station = true;
+});
+map.addEventListener("click", function (e) {
+    if(flag_enable_add_station){
+        flag_enable_add_station = false;
+        let point = e.point;
+        point.name = '';
+        arr_stations.push(point);
+        flag_need_refresh_routepath = true;
+        refresh_map_overlay();
+        refresh_div_stations();
+    }
+});
+
+// 注册事件 点击删除站点
+$(document).on('click', 'button[name="delete_station"]', function () {
+    arr_stations.splice($(this).attr("orderid")-1, 1);
+    flag_need_refresh_routepath = true;
+    refresh_map_overlay();
+    refresh_div_stations();
+});
+
+// 注册事件修改站点名称在地图上同步显示
+$(document).on('input', 'input[name="station_name"]', function () {
+    arr_stations[$(this).attr("orderid")-1].name = $(this).val();
+    refresh_map_overlay();
+});
+
+// 注册按钮刷新行车路线
+$(document).on('click', 'button[name="search_polylines"]', function () {
+    routepath = [];
+    flag_need_refresh_routepath = false;
+    let driving = new BMap.DrivingRoute(map, {onSearchComplete:function(){
+        get_routepath_form_driving(driving);
+        refresh_map_overlay();
+    }});
+    driving.search(arr_stations[0], arr_stations[arr_stations.length-1], {waypoints:arr_stations.slice(1,arr_stations.length-1)});
+});
+
+// 保存线路
+$(document).on('click', 'button[name="save_route"]', function () {
+    if(flag_need_refresh_routepath){
+        arr_polylines = [];
+        flag_need_refresh_routepath = false;
+        let driving = new BMap.DrivingRoute(map, {onSearchComplete:function(){
+            get_routepath_form_driving(driving);
+            refresh_map_overlay();
+            save_route();
+        }});
+        driving.search(arr_stations[0], arr_stations[arr_stations.length-1], {waypoints:arr_stations.slice(1,arr_stations.length-1)});
+    }else {
+        save_route();
+    }
+});
+
+// 注册返回按钮
+$(document).on('click', "button[name='return_route_list']", function(){
+    window.location.href = "{% url 'appipark:route' %}";
+});
+
+// 站点拖动排序
+$(document).on('dragstart', 'div[name="station_info"]', function (e) {
+    e.originalEvent.dataTransfer.setData("text/plain", $(e.target).find('input[name="station_name"]').attr('orderid'));
+});
+$(document).on('dragover', 'div[name="stations"]', function (e) {
+    //给允许拖动的范围注册dragover事件 计算拖动的位置n
+    e.originalEvent.preventDefault(); //打开这个以后拖动到位置不再显示禁止图标
+    window.n = Math.round((e.originalEvent.clientY - $('div[name="stations"]')[0].offsetTop)/$('div[name="station_info"]').outerHeight());
+});
+$(document).on('drop', 'div[name="stations"]', function (e) {
+    e.originalEvent.preventDefault(); //允许放置
+    let orderid = e.originalEvent.dataTransfer.getData("text");  //获取传递来的参数
+    let point = arr_stations[orderid-1]; // 这是需要移动的元素
+    arr_stations.splice(orderid-1, 1); //再删除
+    arr_stations.splice(window.n-1, 0, point);  //再添加
+    flag_need_refresh_routepath = true;
+    refresh_map_overlay();
+    refresh_div_stations();
+    e.originalEvent.dataTransfer.clearData(); //清空参数信息
+});
+
+function get_routepath_form_driving(driving) {
+    let num_routes = driving.getResults().getPlan(0).getNumRoutes();
+    for(let i=0; i<num_routes; i++){
+        let pts = driving.getResults().getPlan(0).getRoute(i).getPath();
+        for(let j=0; j<pts.length; j++) {
+            let point = pts[j];
+            point.pathindex = i;
+            routepath.push(point);
+        }
+    }
+}
+
+function refresh_form_route_info(route_info) {
+    let lis = $('<div>{0}</div>'.format(route_info)).find('li');
+    let arr_lines = [];
+    for(let i=0; i<lis.length; i++){
+        let label = $(lis[i]).find('label').addClass('input-group-text');
+        let input = $(lis[i]).find('input').addClass('form-control');
+        let select = $(lis[i]).find('select').addClass('custom-select');
+        let line = '';
+        if(label.length > 0){
+            line += '<div class="input-group-prepend">{0}</div>'.format(label[0].outerHTML);
+        }
+        if(input.length > 0){
+            line += input[0].outerHTML;
+        }
+        if(select.length >0){
+            line += select[0].outerHTML;
+        }
+        line = '<div class="input-group input-group-sm">{0}</div>'.format(line);
+        arr_lines.push(line);
+    }
+    $("form[name='route_fields']")[0].innerHTML = arr_lines.join('');
+}
+
+// 刷新route_fields的显示
+function refresh_form_route_fields(route_fields) {
+    let arr_field_content = [];
+    for(let i=0; i<route_fields.length; i++){
+        let field = route_fields[i];
+        let field_content = '';
+        if(field.choices !== undefined){ //存在choice的情况
+            field_content += '<div class="input-group input-group-sm mb-2"><div class="input-group-prepend"><span class="input-group-text mr-3" id="inputGroup-sizing-sm">{0}</span>'.format(field.verbose_name);
+            for(const choice of field.choices){
+                if(field.value === choice[0].toString()){
+                    field_content += '<div class="form-check form-check-inline"><label class="form-check-label" for="inlineRadio_{0}">{1}</label><input class="form-check-input" type="radio" name="{2}" id="inlineRadio_{0}" value="{0}" checked></div>'.format(choice[0], choice[1], field.name);
+                } else {
+                    field_content += '<div class="form-check form-check-inline"><label class="form-check-label" for="inlineRadio_{0}">{1}</label><input class="form-check-input" type="radio" name="{2}" id="inlineRadio_{0}" value="{0}"></div>'.format(choice[0], choice[1], field.name);
+                }
+            }
+            field_content += '</div></div>';
+        } else { // 普通input情况
+            field_content += '<div class="input-group input-group-sm mb-2"><div class="input-group-prepend"><span class="input-group-text" id="inputGroup-sizing-sm">{0}</span></div><input type="text" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm" name="{1}" value="{2}"></div>'.format(field.verbose_name, field.name, field.value);
+        }
+        arr_field_content.push(field_content);
+    }
+    $("form[name='route_fields']")[0].innerHTML = arr_field_content.join('');
+}
+
+// 刷新地图覆盖层
+function refresh_map_overlay() {
+    map.clearOverlays();  // 删除目前覆盖层
+    if(arr_stations.length>0){
+        for(let i=0; i<arr_stations.length; i++){
+            let point = arr_stations[i];
+            let marker = new BMap.Marker(point);
+            marker.enableDragging();
+            marker.addEventListener("mouseup", function (e) { // 给marker添加移动事件
+                let name = point.name;
+                arr_stations[i] = e.point;
+                arr_stations[i].name = name;
+                flag_need_refresh_routepath = true;
+            });
+            let label = new BMap.Label("{0}:{1}".format(i+1, point.name), {offset:new BMap.Size(20,-10)});
+            marker.setLabel(label);
+            map.addOverlay(marker);
+        }
+        map.centerAndZoom(arr_stations[arr_stations.length-1], 14);
+    } else {
+        map.centerAndZoom('石家庄', 14);
+    }
+    if (routepath.length > 0) {
+        let polyline = new BMap.Polyline(routepath);
+        map.addOverlay(polyline);
+    }
+}
+
+// 刷新div_stations显示
+function refresh_div_stations() {
+    let arr_div_staions = [];
+    for(let i=0; i<arr_stations.length; i++){
+        let point = arr_stations[i];
+        let div_station = '<div draggable="true" name="station_info"><div class="input-group input-group-sm"><div class="input-group-prepend"><span class="input-group-text">{0}</span></div><input type="text" class="form-control" value="{1}" name="station_name" orderid="{0}"><div class="input-group-append"><button class="btn btn-outline-danger btn-sm" name="delete_station" orderid="{0}">删除</button></div></div></div>'.format(i+1, point.name);
+        arr_div_staions.push(div_station);
+    }
+    $("div[name='stations']")[0].innerHTML = arr_div_staions.join(''); //把内容添加到页面
+}
+
+function save_route() {
+    let post_data = new FormData($('form[name="route_fields"]')[0]);
+    post_data.append('post_type', 'edit_route');
+    let json_arr_stations = [];
+    for(let i=0; i<arr_stations.length; i++){
+        let json_station = {};
+        let station = arr_stations[i];
+        json_station.orderid = i+1;
+        json_station.name = station.name;
+        json_station.lng = station.lng;
+        json_station.lat = station.lat;
+        json_arr_stations.push(json_station);
+    }
+    post_data.append('stations', JSON.stringify(json_arr_stations));
+    let json_routepath = [];
+    for(let i=0; i<routepath.length; i++){
+        let json_point = {};
+        let point = routepath[i];
+        json_point.orderid = i;
+        json_point.lng = point.lng;
+        json_point.lat = point.lat;
+        json_point.pathindex = point.pathindex;
+        json_routepath.push(json_point);
+    }
+    post_data.append('routepath', JSON.stringify(json_routepath));
+    $.ajax({url:'', type:'post', contentType:false, processData:false, dataType:'json', data:post_data, success:function(respon){if(respon.msg !== 'success'){layer.msg(JSON.stringify(respon.errmsg));}else{
+            window.location.href = '';
+    }}});
+}
+</script>
+{% endblock %}
+
+{% block page_head%}
+<script type="text/javascript" src="//api.map.baidu.com/api?v=2.0&ak=aywrDtuOo0A2HFdC5iGMyI1ZllxzdHkW"></script>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends 'appipark2/base_route_manage.html' %}
+
+{% block page_body1 %}
+<div class="container-fluid">
+    <div class="row">
+        <button type="button" class="btn btn-link" name="new_route">新增班车线路</button>
+    </div>
+    <div class="row">
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">序号</th>
+                    <th scope="col">线路名称</th>
+                    <th scope="col">始发站</th>
+                    <th scope="col">终点站</th>
+                    <th scope="col">车牌号</th>
+                    <th scope="col">线路类型</th>
+                    <th scope="col">运行时间</th>
+                    <th scope="col">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for obj in obj_list %}
+                <tr>
+                    <th scope="row">{{ forloop.counter }}</th>
+                    <td>{{ obj.name }}</td>
+                    <td>{{ obj.station_start }}</td>
+                    <td>{{ obj.station_end }}</td>
+                    <td>{{ obj.vehicle }}</td>
+                    <td>{{ obj.type }}</td>
+                    <td>{{ obj.runningtime }}</td>
+                    <td>
+                        <button type="button" class="btn btn-link" name="view_route" objname={{obj.name}}>线路详情</button>
+                        <button type="button" class="btn btn-link" name="edit_route" objname="{{obj.name}}">编辑</button>
+                        <button type="button" class="btn btn-link" name="delete_route" objname="{{obj.name}}">删除</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_script1 %}
+<script type="text/javascript">
+$(document).on('click', "button[name='new_route']", function () {
+    let post_data = new FormData();
+    post_data.append('post_type', 'get_route_form_info');
+    $.ajax({url:'', type:'post', contentType:false, processData:false, dataType:'json', data:post_data, success:function(respon){if(respon.msg !== 'success'){layer.msg(JSON.stringify(respon.errmsg));}else{
+        let title = '新增班车线路';
+        let content = get_form_content('add_route', respon.form);
+        layer.open({type: 1, closeBtn: 0, offset: 'r', area: ['40%', '100%'], shade: 0.5, btn:['提交','返回'], title: title, content:content, yes:function(){
+            let post_data = new FormData($("form[name='add_route']")[0]);
+            post_data.append('post_type', 'add_route');
+            $.ajax({url:'', type:'post', contentType:false, processData:false, dataType:'json', data:post_data, success:function(respon){if(respon.msg !== 'success'){layer.msg(JSON.stringify(respon.errmsg));}else{
+                location.href = "";
+            }}});
+        }});
+    }}});
+});
+
+$(document).on('click', "button[name='edit_route']", function () {
+    let objname = this.getAttribute("objname");
+    location.href = "/ipark/route/edit/{0}/".format(objname);
+});
+
+$(document).on('click', "button[name='delete_route']", function () {
+    let objname = this.getAttribute("objname");
+    layer.confirm('确定要删除班车线路--{0}???'.format(objname), {btn: ['确定','返回']}, function () {
+        let post_data = new FormData();
+        post_data.append('post_type', 'delete_route');
+        post_data.append('objname', objname);
+        $.ajax({url:'', type:'post', contentType:false, processData:false, dataType:'json', data:post_data, success:function(respon){if(respon.msg !== 'success'){layer.msg(JSON.stringify(respon.errmsg));}else{
+            location.href = "";
+        }}});
+    });
+});
+
+$(document).on('click', "button[name='view_route']", function () {
+    location.href = "/ipark/route/{0}/".format(this.getAttribute("objname"));
+});
+
+function get_form_content(form_name, str) {
+    let lis = $('<div>{0}</div>'.format(str)).find('li').addClass("list-group-item");
+    let arr_lis = [];
+    for(let i=0; i<lis.length; i++){
+        arr_lis.push(lis[i].outerHTML);
+    }
+    return '<form name="{0}"><ul class="list-group">{1}</ul></form>'.format(form_name, arr_lis.join(''));
+}
+</script>
+{% endblock %}
